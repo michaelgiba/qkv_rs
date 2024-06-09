@@ -1,7 +1,7 @@
 use crate::logical::{LogicalGraph, LogicalOp, LogicalTensor};
-use crate::opcode::OpCodes;
+use crate::opcode::OpCode;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RotaryPositionEmbeddingOp {
     head_dim: usize,
 }
@@ -19,10 +19,6 @@ impl LogicalOp for RotaryPositionEmbeddingOp {
 
         graph.new_tensor(input.shape.clone(), input.value_type)
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::NnRope
-    }
 }
 
 pub fn plan_rope(
@@ -32,7 +28,7 @@ pub fn plan_rope(
     head_dim: usize,
 ) -> LogicalTensor {
     graph.register_call(
-        Box::new(RotaryPositionEmbeddingOp { head_dim: head_dim }),
+        OpCode::NnRope(RotaryPositionEmbeddingOp { head_dim: head_dim }),
         &[inputs, positions],
     )
 }

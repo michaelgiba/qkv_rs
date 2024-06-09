@@ -1,5 +1,8 @@
-use crate::logical::{LogicalGraph, LogicalOp, LogicalTensor, LogicalValueType};
-use core::f64;
+use crate::{
+    logical::{LogicalGraph, LogicalGraphCall, LogicalOp, LogicalTensor, LogicalValueType},
+    opcode::OpCode,
+};
+use core::{f64, panic};
 use std::{collections::HashMap, collections::HashSet, fmt::Debug};
 
 #[derive(Debug, Clone)]
@@ -17,6 +20,24 @@ impl PhysicalValue {
 
     pub fn as_f64(&self) -> f64 {
         self.value_type.as_f64(&self.value)
+    }
+
+    pub fn from_f64(value: f64) -> PhysicalValue {
+        PhysicalValue {
+            value_type: LogicalValueType::F64,
+            value: LogicalValueType::F64.from_f64(value),
+        }
+    }
+
+    pub fn as_u32(&self) -> u32 {
+        self.value_type.as_u32(&self.value)
+    }
+
+    pub fn from_u32(value: u32) -> PhysicalValue {
+        PhysicalValue {
+            value_type: LogicalValueType::U32,
+            value: LogicalValueType::U32.from_u32(value),
+        }
     }
 
     pub fn add(&self, other: PhysicalValue) -> PhysicalValue {
@@ -114,7 +135,7 @@ impl PhysicalGraph {
                 }
 
                 let physical_call = PhysicalGraphCall {
-                    op_type: find_physical_op(&logical_call.op),
+                    op_type: logical_call_to_physical_op(logical_call),
                     input_tensor_ids: logical_call.input_tensor_ids.clone(),
                     output_tensor_id: tensor_id,
                 };
@@ -186,11 +207,9 @@ impl PhysicalGraph {
             // TODO: Optimize this to avoid copy
             let mut output_copy = output.clone();
 
-            match call.op_type {
-                PhysicalOpType::Literal(op) => {
-                    op.physical_forward(&input_tensors, &mut output_copy);
-                }
-            }
+            call.op_type
+                .get_physical()
+                .physical_forward(&input_tensors, &mut output_copy);
 
             self.tensor_id_to_tensor
                 .insert(call.output_tensor_id, output_copy);
@@ -205,18 +224,265 @@ pub trait PhysicalOp {
 }
 
 #[derive(Debug, Clone)]
-pub struct PhysicalLiteralOp {}
-impl PhysicalOp for PhysicalLiteralOp {
-    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {}
+pub struct PhysicalLiteralF64Op {
+    pub value: f64,
+}
+impl PhysicalOp for PhysicalLiteralF64Op {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+
+        for i in 0..output.num_elements() {
+            output.set_element(i, PhysicalValue::from_f64(self.value));
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalLiteralU32Op {
+    pub value: u32,
+}
+impl PhysicalOp for PhysicalLiteralU32Op {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+
+        for i in 0..output.num_elements() {
+            output.set_element(i, PhysicalValue::from_u32(self.value));
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalNoOp {}
+impl PhysicalOp for PhysicalNoOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalAddOp {}
+impl PhysicalOp for PhysicalAddOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalSubOp {}
+impl PhysicalOp for PhysicalSubOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalMulOp {}
+impl PhysicalOp for PhysicalMulOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalDivOp {}
+impl PhysicalOp for PhysicalDivOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalGetIndexOp {}
+impl PhysicalOp for PhysicalGetIndexOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalConcatOp {}
+impl PhysicalOp for PhysicalConcatOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalPlaceholderOp {}
+impl PhysicalOp for PhysicalPlaceholderOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalDotProductOp {}
+impl PhysicalOp for PhysicalDotProductOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalSumOp {}
+impl PhysicalOp for PhysicalSumOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalSqrtOp {}
+impl PhysicalOp for PhysicalSqrtOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalMatMulOp {}
+impl PhysicalOp for PhysicalMatMulOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalSliceOp {}
+impl PhysicalOp for PhysicalSliceOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalNnSoftmaxOp {}
+impl PhysicalOp for PhysicalNnSoftmaxOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalNnAttentionOp {}
+impl PhysicalOp for PhysicalNnAttentionOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalNnDenseOp {}
+impl PhysicalOp for PhysicalNnDenseOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalNnRmsNormOp {}
+impl PhysicalOp for PhysicalNnRmsNormOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalNnRopeOp {}
+impl PhysicalOp for PhysicalNnRopeOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalNnTransformerOp {}
+impl PhysicalOp for PhysicalNnTransformerOp {
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("{:?} {:?} {:?}", self, _inputs, output);
+    }
 }
 
 #[derive(Debug, Clone)]
 pub enum PhysicalOpType {
-    Literal(PhysicalLiteralOp),
+    LiteralF64(PhysicalLiteralF64Op),
+    LiteralU32(PhysicalLiteralU32Op),
+
+    Placeholder(PhysicalPlaceholderOp),
+    Concat(PhysicalConcatOp),
+    No(PhysicalNoOp),
+    GetIndex(PhysicalGetIndexOp),
+    Add(PhysicalAddOp),
+    Sub(PhysicalSubOp),
+    Div(PhysicalDivOp),
+    Mul(PhysicalMulOp),
+    DotProduct(PhysicalDotProductOp),
+    Sum(PhysicalSumOp),
+    Sqrt(PhysicalSqrtOp),
+    MatMul(PhysicalMatMulOp),
+    Slice(PhysicalSliceOp),
+    NnSoftmax(PhysicalNnSoftmaxOp),
+    NnAttention(PhysicalNnAttentionOp),
+    NnDense(PhysicalNnDenseOp),
+    NnRmsNorm(PhysicalNnRmsNormOp),
+    NnRope(PhysicalNnRopeOp),
+    NnTransformer(PhysicalNnTransformerOp),
 }
 
-fn find_physical_op(logical_op: &Box<dyn LogicalOp>) -> PhysicalOpType {
-    match logical_op {
-        _ => PhysicalOpType::Literal(PhysicalLiteralOp {}),
+impl PhysicalOpType {
+    pub fn get_physical(&self) -> Box<dyn PhysicalOp> {
+        match &self {
+            PhysicalOpType::LiteralF64(op) => Box::new(op.clone()),
+            PhysicalOpType::LiteralU32(op) => Box::new(op.clone()),
+            PhysicalOpType::Placeholder(op) => Box::new(op.clone()),
+            PhysicalOpType::Concat(op) => Box::new(op.clone()),
+            PhysicalOpType::No(op) => Box::new(op.clone()),
+            PhysicalOpType::GetIndex(op) => Box::new(op.clone()),
+            PhysicalOpType::Add(op) => Box::new(op.clone()),
+            PhysicalOpType::Sub(op) => Box::new(op.clone()),
+            PhysicalOpType::Div(op) => Box::new(op.clone()),
+            PhysicalOpType::Mul(op) => Box::new(op.clone()),
+            PhysicalOpType::DotProduct(op) => Box::new(op.clone()),
+            PhysicalOpType::Sum(op) => Box::new(op.clone()),
+            PhysicalOpType::Sqrt(op) => Box::new(op.clone()),
+            PhysicalOpType::MatMul(op) => Box::new(op.clone()),
+            PhysicalOpType::Slice(op) => Box::new(op.clone()),
+            PhysicalOpType::NnSoftmax(op) => Box::new(op.clone()),
+            PhysicalOpType::NnAttention(op) => Box::new(op.clone()),
+            PhysicalOpType::NnDense(op) => Box::new(op.clone()),
+            PhysicalOpType::NnRmsNorm(op) => Box::new(op.clone()),
+            PhysicalOpType::NnRope(op) => Box::new(op.clone()),
+            PhysicalOpType::NnTransformer(op) => Box::new(op.clone()),
+        }
+    }
+}
+
+fn logical_call_to_physical_op(logical_call: &LogicalGraphCall) -> PhysicalOpType {
+    match &logical_call.op {
+        OpCode::Return(_) => PhysicalOpType::No(PhysicalNoOp {}),
+        OpCode::LiteralU32(op) => {
+            PhysicalOpType::LiteralU32(PhysicalLiteralU32Op { value: op.value })
+        }
+        OpCode::LiteralF64(op) => {
+            PhysicalOpType::LiteralF64(PhysicalLiteralF64Op { value: op.value })
+        }
+        OpCode::BasicGetIndex(_) => PhysicalOpType::GetIndex(PhysicalGetIndexOp {}),
+        OpCode::BasicConcat(_) => PhysicalOpType::Concat(PhysicalConcatOp {}),
+        OpCode::BasicPlaceholder(_) => PhysicalOpType::Placeholder(PhysicalPlaceholderOp {}),
+        OpCode::BasicAdd(_) => PhysicalOpType::Add(PhysicalAddOp {}),
+        OpCode::BasicMul(_) => PhysicalOpType::Mul(PhysicalMulOp {}),
+        OpCode::BasicDiv(_) => PhysicalOpType::Div(PhysicalDivOp {}),
+        OpCode::BasicSub(_) => PhysicalOpType::Sub(PhysicalSubOp {}),
+        OpCode::BasicDotProduct(_) => PhysicalOpType::DotProduct(PhysicalDotProductOp {}),
+        OpCode::BasicSum(_) => PhysicalOpType::Sum(PhysicalSumOp {}),
+        OpCode::BasicSqrt(_) => PhysicalOpType::Sqrt(PhysicalSqrtOp {}),
+        OpCode::BasicMatMul(_) => PhysicalOpType::MatMul(PhysicalMatMulOp {}),
+        OpCode::BasicSlice(_) => PhysicalOpType::Slice(PhysicalSliceOp {}),
+        OpCode::NnSoftmax(_) => PhysicalOpType::NnSoftmax(PhysicalNnSoftmaxOp {}),
+        OpCode::NnAttention(_) => PhysicalOpType::NnAttention(PhysicalNnAttentionOp {}),
+        OpCode::NnDense(_) => PhysicalOpType::NnDense(PhysicalNnDenseOp {}),
+        OpCode::NnRmsNorm(_) => PhysicalOpType::NnRmsNorm(PhysicalNnRmsNormOp {}),
+        OpCode::NnRope(_) => PhysicalOpType::NnRope(PhysicalNnRopeOp {}),
+        OpCode::NnTransformer(_) => PhysicalOpType::NnTransformer(PhysicalNnTransformerOp {}),
     }
 }

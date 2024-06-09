@@ -1,8 +1,8 @@
 use crate::logical::{LogicalGraph, LogicalOp, LogicalTensor, LogicalValueType};
-use crate::opcode::OpCodes;
+use crate::opcode::OpCode;
 
 #[derive(Debug, Clone)]
-struct LogicalPlaceholderOp {
+pub struct LogicalPlaceholderOp {
     shape: Vec<usize>,
     value_type: LogicalValueType,
 }
@@ -15,10 +15,6 @@ impl LogicalOp for LogicalPlaceholderOp {
         assert_eq!(inputs.len(), 0);
         graph.new_tensor(self.shape.clone(), self.value_type)
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::BasicPlaceholder
-    }
 }
 
 pub fn plan_input_placeholder(
@@ -27,7 +23,7 @@ pub fn plan_input_placeholder(
     value_type: LogicalValueType,
 ) -> LogicalTensor {
     graph.register_call(
-        Box::new(LogicalPlaceholderOp {
+        OpCode::BasicPlaceholder(LogicalPlaceholderOp {
             shape: shape.to_vec(),
             value_type,
         }),

@@ -1,8 +1,8 @@
 use crate::logical::LogicalGraph;
 use crate::logical::{LogicalOp, LogicalTensor};
-use crate::opcode::OpCodes;
+use crate::opcode::OpCode;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LogicalSoftmaxOp {}
 
 impl LogicalOp for LogicalSoftmaxOp {
@@ -15,12 +15,8 @@ impl LogicalOp for LogicalSoftmaxOp {
         let x = inputs[0];
         graph.new_tensor(x.shape.clone(), x.value_type)
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::NnSoftmax
-    }
 }
 
 pub fn plan_softmax(graph: &mut LogicalGraph, input: &LogicalTensor) -> LogicalTensor {
-    graph.register_call(Box::new(LogicalSoftmaxOp {}), &[input])
+    graph.register_call(OpCode::NnSoftmax(LogicalSoftmaxOp {}), &[input])
 }

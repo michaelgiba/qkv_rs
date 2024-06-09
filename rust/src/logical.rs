@@ -1,6 +1,5 @@
-use crate::opcode::OpCodes;
-use crate::ops::basic::inputs;
-use std::{collections::HashMap, collections::HashSet, collections::VecDeque, fmt::Debug};
+use crate::opcode::OpCode;
+use std::{collections::HashMap, fmt::Debug};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LogicalValueType {
@@ -29,6 +28,20 @@ impl LogicalValueType {
         match self {
             LogicalValueType::F64 => f64_value_to_bytes(value),
             LogicalValueType::U32 => (value as u32).to_le_bytes().to_vec(),
+        }
+    }
+
+    pub fn as_u32(&self, bytes: &[u8]) -> u32 {
+        match self {
+            LogicalValueType::F64 => panic!("Cannot convert f64 to u32"),
+            LogicalValueType::U32 => u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
+        }
+    }
+
+    pub fn from_u32(&self, value: u32) -> Vec<u8> {
+        match self {
+            LogicalValueType::F64 => panic!("Cannot convert u32 to f64"),
+            LogicalValueType::U32 => value.to_le_bytes().to_vec(),
         }
     }
 }
@@ -72,9 +85,8 @@ impl LogicalTensor {
 pub trait LogicalOp: Debug {
     fn logical_forward(&self, graph: &mut LogicalGraph, inputs: &[&LogicalTensor])
         -> LogicalTensor;
-    fn opcode(&self) -> OpCodes;
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LiteralOp<T> {
     pub shape: Vec<usize>,
     pub value: T,
@@ -88,12 +100,9 @@ impl LogicalOp for LiteralOp<f64> {
     ) -> LogicalTensor {
         graph.new_tensor(self.shape.clone(), LogicalValueType::F64)
     }
-    fn opcode(&self) -> OpCodes {
-        OpCodes::Literal
-    }
 }
 
-impl LogicalOp for LiteralOp<u64> {
+impl LogicalOp for LiteralOp<u32> {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
@@ -101,15 +110,11 @@ impl LogicalOp for LiteralOp<u64> {
     ) -> LogicalTensor {
         graph.new_tensor(self.shape.clone(), LogicalValueType::U32)
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::Literal
-    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LogicalReturnOp {
-    returned_from_op: Box<dyn LogicalOp>,
+    returned_from_op: Box<OpCode>,
 }
 impl LogicalOp for LogicalReturnOp {
     fn logical_forward(
@@ -120,15 +125,11 @@ impl LogicalOp for LogicalReturnOp {
         assert_eq!(inputs.len(), 1);
         graph.new_tensor(inputs[0].shape.clone(), inputs[0].value_type)
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::Return
-    }
 }
 
 #[derive(Debug)]
 pub struct LogicalGraphCall {
-    pub op: Box<dyn LogicalOp>,
+    pub op: OpCode,
     pub input_tensor_ids: Vec<usize>,
     pub output_tensor_id: usize,
 }
@@ -149,19 +150,15 @@ impl LogicalGraph {
         graph
     }
 
-    pub fn register_call(
-        &mut self,
-        op: Box<dyn LogicalOp>,
-        inputs: &[&LogicalTensor],
-    ) -> LogicalTensor {
-        let output = op.logical_forward(self, inputs);
+    pub fn register_call(&mut self, op: OpCode, inputs: &[&LogicalTensor]) -> LogicalTensor {
+        let output = op.get_logical().logical_forward(self, inputs);
 
         let input_tensor_ids: Vec<usize> = inputs.iter().map(|t| t.id).collect();
 
         if self.output_tensor_id_to_call.contains_key(&output.id) {
             return self.register_call(
-                Box::new(LogicalReturnOp {
-                    returned_from_op: op,
+                OpCode::Return(LogicalReturnOp {
+                    returned_from_op: Box::new(op),
                 }),
                 &[&output],
             );
@@ -201,7 +198,7 @@ impl LogicalGraph {
 
     pub fn scalar_f64(&mut self, value: f64) -> LogicalTensor {
         self.register_call(
-            Box::new(LiteralOp {
+            OpCode::LiteralF64(LiteralOp {
                 value: value,
                 shape: vec![1],
             }),
@@ -209,9 +206,9 @@ impl LogicalGraph {
         )
     }
 
-    pub fn scalar_u64(&mut self, value: u64) -> LogicalTensor {
+    pub fn scalar_u32(&mut self, value: u32) -> LogicalTensor {
         self.register_call(
-            Box::new(LiteralOp {
+            OpCode::LiteralU32(LiteralOp {
                 value: value,
                 shape: vec![1],
             }),

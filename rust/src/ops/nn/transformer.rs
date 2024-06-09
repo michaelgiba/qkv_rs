@@ -1,12 +1,12 @@
 use crate::logical::LogicalGraph;
 use crate::logical::{LogicalOp, LogicalTensor};
-use crate::opcode::OpCodes;
+use crate::opcode::OpCode;
 use crate::ops::basic::math::plan_add;
 use crate::ops::nn::attention::plan_multihead_attention;
 use crate::ops::nn::dense::plan_dense_op;
 use crate::ops::nn::norm::plan_rms_norm;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LogicalTransformerBlockOp {
     embed_dim: usize,
     mha_num_heads: usize,
@@ -58,10 +58,6 @@ impl LogicalOp for LogicalTransformerBlockOp {
 
         dense_ffw_op
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::NnTransformer
-    }
 }
 
 pub fn plan_transformer_block(
@@ -81,5 +77,5 @@ pub fn plan_transformer_block(
         ff_output_dim: ff_output_dim,
     };
 
-    graph.register_call(Box::new(op), &[input_seq])
+    graph.register_call(OpCode::NnTransformer(op), &[input_seq])
 }

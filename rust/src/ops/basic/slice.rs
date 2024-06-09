@@ -1,5 +1,5 @@
-use crate::logical::{LogicalGraph, LogicalOp, LogicalTensor, LogicalValueType};
-use crate::opcode::OpCodes;
+use crate::logical::{LogicalGraph, LogicalOp, LogicalTensor};
+use crate::opcode::OpCode;
 
 #[derive(Debug, Clone)]
 struct SliceInterval {
@@ -8,7 +8,7 @@ struct SliceInterval {
 }
 
 #[derive(Debug, Clone)]
-struct LogicalSliceOp {
+pub struct LogicalSliceOp {
     slices: Vec<SliceInterval>,
 }
 
@@ -35,10 +35,6 @@ impl LogicalOp for LogicalSliceOp {
 
         output
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::BasicSlice
-    }
 }
 
 pub fn plan_slice(
@@ -47,7 +43,7 @@ pub fn plan_slice(
     slice: &[SliceInterval],
 ) -> LogicalTensor {
     graph.register_call(
-        Box::new(LogicalSliceOp {
+        OpCode::BasicSlice(LogicalSliceOp {
             slices: slice.to_vec(),
         }),
         &[tensor],
@@ -55,7 +51,7 @@ pub fn plan_slice(
 }
 
 #[derive(Debug, Clone)]
-struct LogicalGetIndexOp {
+pub struct LogicalGetIndexOp {
     index: usize,
 }
 
@@ -72,10 +68,6 @@ impl LogicalOp for LogicalGetIndexOp {
 
         graph.scalar_tensor(tensor.value_type)
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::BasicGetIndex
-    }
 }
 
 pub fn plan_get_element(
@@ -83,5 +75,51 @@ pub fn plan_get_element(
     tensor: &LogicalTensor,
     index: usize,
 ) -> LogicalTensor {
-    graph.register_call(Box::new(LogicalGetIndexOp { index }), &[tensor])
+    graph.register_call(
+        OpCode::BasicGetIndex(LogicalGetIndexOp { index }),
+        &[tensor],
+    )
+}
+
+#[derive(Debug, Clone)]
+pub struct LogicalConcatOp {
+    axis: usize,
+}
+
+impl LogicalOp for LogicalConcatOp {
+    fn logical_forward(
+        &self,
+        graph: &mut LogicalGraph,
+        inputs: &[&LogicalTensor],
+    ) -> LogicalTensor {
+        assert!(!inputs.is_empty());
+        let first_input = inputs[0];
+        let dims = first_input.shape.len();
+
+        // check that all inputs have the same shape except for the axis
+        for i in 1..inputs.len() {
+            assert_eq!(inputs[i].shape.len(), dims);
+            // check types are the same
+            assert_eq!(inputs[i].value_type, first_input.value_type);
+
+            for j in 0..dims {
+                if j == self.axis {
+                    continue;
+                }
+                assert_eq!(inputs[i].shape[j], first_input.shape[j]);
+            }
+        }
+
+        let mut new_shape = first_input.shape.clone();
+        new_shape[self.axis] = inputs.iter().map(|t| t.shape[self.axis]).sum();
+        graph.new_tensor(new_shape, inputs[0].value_type)
+    }
+}
+
+pub fn plan_concat(
+    graph: &mut LogicalGraph,
+    tensors: &[&LogicalTensor],
+    axis: usize,
+) -> LogicalTensor {
+    graph.register_call(OpCode::BasicConcat(LogicalConcatOp { axis }), tensors)
 }

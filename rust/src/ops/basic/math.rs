@@ -1,8 +1,7 @@
 use crate::{
     logical::{LogicalGraph, LogicalOp, LogicalTensor, LogicalValueType},
-    opcode::OpCodes,
+    opcode::OpCode,
     ops::basic::slice::plan_get_element,
-    physical::{PhysicalOp, PhysicalTensor},
 };
 
 fn default_logical_binary_op(graph: &mut LogicalGraph, inputs: &[&LogicalTensor]) -> LogicalTensor {
@@ -23,7 +22,7 @@ fn default_logical_binary_op(graph: &mut LogicalGraph, inputs: &[&LogicalTensor]
 }
 
 #[derive(Debug, Clone)]
-struct LogicalAddOp {}
+pub struct LogicalAddOp {}
 
 impl LogicalOp for LogicalAddOp {
     fn logical_forward(
@@ -33,17 +32,14 @@ impl LogicalOp for LogicalAddOp {
     ) -> LogicalTensor {
         default_logical_binary_op(graph, inputs)
     }
-    fn opcode(&self) -> OpCodes {
-        OpCodes::BasicAdd
-    }
 }
 
 pub fn plan_add(graph: &mut LogicalGraph, a: &LogicalTensor, b: &LogicalTensor) -> LogicalTensor {
-    graph.register_call(Box::new(LogicalAddOp {}), &[a, b])
+    graph.register_call(OpCode::BasicAdd(LogicalAddOp {}), &[a, b])
 }
 
 #[derive(Debug, Clone)]
-struct LogicalSubOp {}
+pub struct LogicalSubOp {}
 impl LogicalOp for LogicalSubOp {
     fn logical_forward(
         &self,
@@ -52,18 +48,14 @@ impl LogicalOp for LogicalSubOp {
     ) -> LogicalTensor {
         default_logical_binary_op(graph, inputs)
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::BasicSub
-    }
 }
 
 pub fn plan_sub(graph: &mut LogicalGraph, a: &LogicalTensor, b: &LogicalTensor) -> LogicalTensor {
-    graph.register_call(Box::new(LogicalSubOp {}), &[a, b])
+    graph.register_call(OpCode::BasicSub(LogicalSubOp {}), &[a, b])
 }
 
 #[derive(Debug, Clone)]
-struct LogicalMulOp {}
+pub struct LogicalMulOp {}
 impl LogicalOp for LogicalMulOp {
     fn logical_forward(
         &self,
@@ -72,18 +64,14 @@ impl LogicalOp for LogicalMulOp {
     ) -> LogicalTensor {
         default_logical_binary_op(graph, inputs)
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::BasicMul
-    }
 }
 
 pub fn plan_mul(graph: &mut LogicalGraph, a: &LogicalTensor, b: &LogicalTensor) -> LogicalTensor {
-    graph.register_call(Box::new(LogicalMulOp {}), &[a, b])
+    graph.register_call(OpCode::BasicMul(LogicalMulOp {}), &[a, b])
 }
 
 #[derive(Debug, Clone)]
-struct LogicalDivOp {}
+pub struct LogicalDivOp {}
 impl LogicalOp for LogicalDivOp {
     fn logical_forward(
         &self,
@@ -92,10 +80,6 @@ impl LogicalOp for LogicalDivOp {
     ) -> LogicalTensor {
         default_logical_binary_op(graph, inputs)
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::BasicDiv
-    }
 }
 
 pub fn plan_divide(
@@ -103,7 +87,7 @@ pub fn plan_divide(
     a: &LogicalTensor,
     b: &LogicalTensor,
 ) -> LogicalTensor {
-    graph.register_call(Box::new(LogicalDivOp {}), &[a, b])
+    graph.register_call(OpCode::BasicDiv(LogicalDivOp {}), &[a, b])
 }
 
 pub fn plan_square(graph: &mut LogicalGraph, tensor: &LogicalTensor) -> LogicalTensor {
@@ -111,7 +95,7 @@ pub fn plan_square(graph: &mut LogicalGraph, tensor: &LogicalTensor) -> LogicalT
 }
 
 #[derive(Debug, Clone)]
-struct LogicalSumOp {}
+pub struct LogicalSumOp {}
 
 impl LogicalOp for LogicalSumOp {
     fn logical_forward(
@@ -135,18 +119,14 @@ impl LogicalOp for LogicalSumOp {
 
         sum
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::BasicSum
-    }
 }
 
 pub fn plan_sum(graph: &mut LogicalGraph, tensor: &LogicalTensor) -> LogicalTensor {
-    graph.register_call(Box::new(LogicalSumOp {}), &[tensor])
+    graph.register_call(OpCode::BasicSum(LogicalSumOp {}), &[tensor])
 }
 
 #[derive(Debug, Clone)]
-struct LogicalSqrtOp {}
+pub struct LogicalSqrtOp {}
 
 impl LogicalOp for LogicalSqrtOp {
     fn logical_forward(
@@ -159,17 +139,14 @@ impl LogicalOp for LogicalSqrtOp {
 
         graph.new_tensor(input.shape.clone(), input.value_type)
     }
-    fn opcode(&self) -> OpCodes {
-        OpCodes::BasicSqrt
-    }
 }
 
 pub fn plan_sqrt(graph: &mut LogicalGraph, tensor: &LogicalTensor) -> LogicalTensor {
-    graph.register_call(Box::new(LogicalSqrtOp {}), &[tensor])
+    graph.register_call(OpCode::BasicSqrt(LogicalSqrtOp {}), &[tensor])
 }
 
 #[derive(Debug, Clone)]
-struct LogicalMatMulOp {}
+pub struct LogicalMatMulOp {}
 
 impl LogicalOp for LogicalMatMulOp {
     fn logical_forward(
@@ -191,10 +168,6 @@ impl LogicalOp for LogicalMatMulOp {
 
         graph.new_tensor(shape, a.value_type)
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::BasicMatMul
-    }
 }
 
 pub fn plan_mat_mul(
@@ -202,11 +175,11 @@ pub fn plan_mat_mul(
     a: &LogicalTensor,
     b: &LogicalTensor,
 ) -> LogicalTensor {
-    graph.register_call(Box::new(LogicalMatMulOp {}), &[a, b])
+    graph.register_call(OpCode::BasicMatMul(LogicalMatMulOp {}), &[a, b])
 }
 
 #[derive(Debug, Clone)]
-struct LogicalDotProductOp {}
+pub struct LogicalDotProductOp {}
 
 impl LogicalOp for LogicalDotProductOp {
     fn logical_forward(
@@ -224,10 +197,6 @@ impl LogicalOp for LogicalDotProductOp {
 
         graph.new_tensor([a.shape[0], a.shape[0]].to_vec(), LogicalValueType::F64)
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::BasicDotProduct
-    }
 }
 
 pub fn plan_dot_product(
@@ -235,52 +204,5 @@ pub fn plan_dot_product(
     a: &LogicalTensor,
     b: &LogicalTensor,
 ) -> LogicalTensor {
-    graph.register_call(Box::new(LogicalDotProductOp {}), &[a, b])
-}
-
-#[derive(Debug, Clone)]
-struct LogicalConcatOp {
-    axis: usize,
-}
-
-impl LogicalOp for LogicalConcatOp {
-    fn logical_forward(
-        &self,
-        graph: &mut LogicalGraph,
-        inputs: &[&LogicalTensor],
-    ) -> LogicalTensor {
-        assert!(!inputs.is_empty());
-        let first_input = inputs[0];
-        let dims = first_input.shape.len();
-
-        // check that all inputs have the same shape except for the axis
-        for i in 1..inputs.len() {
-            assert_eq!(inputs[i].shape.len(), dims);
-            // check types are the same
-            assert_eq!(inputs[i].value_type, first_input.value_type);
-
-            for j in 0..dims {
-                if j == self.axis {
-                    continue;
-                }
-                assert_eq!(inputs[i].shape[j], first_input.shape[j]);
-            }
-        }
-
-        let mut new_shape = first_input.shape.clone();
-        new_shape[self.axis] = inputs.iter().map(|t| t.shape[self.axis]).sum();
-        graph.new_tensor(new_shape, inputs[0].value_type)
-    }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::BasicConcat
-    }
-}
-
-pub fn plan_concat(
-    graph: &mut LogicalGraph,
-    tensors: &[&LogicalTensor],
-    axis: usize,
-) -> LogicalTensor {
-    graph.register_call(Box::new(LogicalConcatOp { axis }), tensors)
+    graph.register_call(OpCode::BasicDotProduct(LogicalDotProductOp {}), &[a, b])
 }

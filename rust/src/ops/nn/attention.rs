@@ -1,14 +1,13 @@
-use std::result;
-
 use crate::logical::{LogicalGraph, LogicalOp, LogicalTensor, LogicalValueType};
-use crate::opcode::OpCodes;
+use crate::opcode::OpCode;
 use crate::ops::basic::inputs::{plan_input_placeholder, plan_new_weights};
-use crate::ops::basic::math::plan_concat;
 use crate::ops::basic::math::{plan_dot_product, plan_mat_mul};
+use crate::ops::basic::slice::plan_concat;
 use crate::ops::nn::activations::plan_softmax;
 use crate::ops::nn::position_embed::plan_rope;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+
 pub struct LogicalAttentionHeadOp {
     input_embed_dim: usize,
     output_head_dim: usize,
@@ -58,10 +57,6 @@ impl LogicalOp for LogicalAttentionHeadOp {
 
         attended_v_proj
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::NnAttention
-    }
 }
 
 pub fn plan_attention_head(
@@ -75,7 +70,7 @@ pub fn plan_attention_head(
         output_head_dim: output_head_dim,
     };
 
-    graph.register_call(Box::new(head_op), &[input_seq])
+    graph.register_call(OpCode::NnAttention(head_op), &[input_seq])
 }
 
 pub fn plan_multihead_attention(

@@ -1,8 +1,8 @@
 use crate::logical::{LogicalGraph, LogicalOp, LogicalTensor};
-use crate::opcode::OpCodes;
+use crate::opcode::OpCode;
 use crate::ops::basic::math::{plan_divide, plan_mul, plan_sqrt, plan_square, plan_sum};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LogicalRmsNormOp;
 impl LogicalOp for LogicalRmsNormOp {
     fn logical_forward(
@@ -12,7 +12,7 @@ impl LogicalOp for LogicalRmsNormOp {
     ) -> LogicalTensor {
         let input = inputs[0];
 
-        let num_elem = graph.scalar_u64(input.num_elements() as u64);
+        let num_elem = graph.scalar_u32(input.num_elements() as u32);
         let scalar_one = graph.scalar_f64(1.0);
 
         let squared = plan_square(graph, input);
@@ -26,12 +26,8 @@ impl LogicalOp for LogicalRmsNormOp {
 
         normed_input
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::NnRmsNorm
-    }
 }
 
 pub fn plan_rms_norm(graph: &mut LogicalGraph, tensor: &LogicalTensor) -> LogicalTensor {
-    graph.register_call(Box::new(LogicalRmsNormOp {}), &[tensor])
+    graph.register_call(OpCode::NnRmsNorm(LogicalRmsNormOp {}), &[tensor])
 }

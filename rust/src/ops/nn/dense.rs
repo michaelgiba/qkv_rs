@@ -1,10 +1,10 @@
 use crate::logical::LogicalGraph;
 use crate::logical::{LogicalOp, LogicalTensor, LogicalValueType};
-use crate::opcode::OpCodes;
+use crate::opcode::OpCode;
 use crate::ops::basic::inputs::plan_new_weights;
 use crate::ops::basic::math::plan_mat_mul;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LogicalDenseOp {
     input_dim: usize,
     hidden_dim: usize,
@@ -35,10 +35,6 @@ impl LogicalOp for LogicalDenseOp {
 
         ff1_output
     }
-
-    fn opcode(&self) -> OpCodes {
-        OpCodes::NnDense
-    }
 }
 
 pub fn plan_dense_op(
@@ -54,5 +50,5 @@ pub fn plan_dense_op(
         output_dim: output_dim,
     };
 
-    graph.register_call(Box::new(op), &[input])
+    graph.register_call(OpCode::NnDense(op), &[input])
 }
