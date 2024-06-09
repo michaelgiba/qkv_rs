@@ -1,25 +1,25 @@
 # General ignores for all directories
-*.pyc             # Compiled Python bytecode
-*.pyo             # Optimized Python bytecode
-**/__pycache__/   # Python bytecode cache directory
-*.swp             # Vim swap files
-*~                # Temporary backup files
+*.pyc
+*.pyo
+**/__pycache__/
+*.swp
+*~
 
 # Python-specific ignores
-python/venv/      # Python virtual environments
-python/*.egg-info # Python package metadata
-python/dist/      # Python distribution packages
-python/build/     # Python build artifacts
+python/venv/
+python/*.egg-info
+python/dist/
+python/build/
 
 # Rust-specific ignores
-rust/target/        # Rust build output directory
+rust/target/
 rust/debug/
-rust/Cargo.lock     # Rust dependency lock file (usually committed)
+rust/Cargo.lock
 
 # Editor-specific ignores (optional)
-.vscode/         # VS Code settings
-.idea/           # IntelliJ IDEA settings
+.vscode/
+.idea/
 
 # Additional ignores (optional)
-.DS_Store         # macOS metadata files
-.env              # Environment variable files (if sensitive)
+.DS_Store
+.env
