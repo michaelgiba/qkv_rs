@@ -1,5 +1,5 @@
 use crate::base_types::{LogicalGraph, LogicalOp, LogicalTensor};
-use crate::ops::basic::{plan_divide, plan_mul, plan_sqrt, plan_square, plan_sum};
+use crate::ops::basic::math::{plan_divide, plan_mul, plan_sqrt, plan_square, plan_sum};
 
 #[derive(Debug)]
 pub struct LogicalRmsNormOp;

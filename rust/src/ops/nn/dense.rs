@@ -1,6 +1,7 @@
 use crate::base_types::LogicalGraph;
 use crate::base_types::{LogicalOp, LogicalTensor, LogicalValueType};
-use crate::ops::basic::{plan_mat_mul, plan_new_weights};
+use crate::ops::basic::math::plan_mat_mul;
+use crate::ops::basic::inputs::plan_new_weights;
 
 #[derive(Debug)]
 pub struct LogicalDenseOp {

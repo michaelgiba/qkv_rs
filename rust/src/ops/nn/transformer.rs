@@ -1,9 +1,9 @@
 use crate::base_types::LogicalGraph;
 use crate::base_types::{LogicalOp, LogicalTensor};
-use crate::ops::attention::plan_multihead_attention;
-use crate::ops::basic::plan_add;
-use crate::ops::dense::plan_dense_op;
-use crate::ops::norm::plan_rms_norm;
+use crate::ops::nn::attention::plan_multihead_attention;
+use crate::ops::basic::math::plan_add;
+use crate::ops::nn::dense::plan_dense_op;
+use crate::ops::nn::norm::plan_rms_norm;
 
 #[derive(Debug)]
 pub struct LogicalTransformerBlockOp {

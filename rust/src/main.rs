@@ -1,7 +1,7 @@
 use clap::Parser;
 use qkv_rs::base_types::{LogicalGraph, LogicalValueType};
-use qkv_rs::ops::basic::plan_input_placeholder;
-use qkv_rs::ops::transformer::plan_transformer_block;
+use qkv_rs::ops::basic::inputs::plan_input_placeholder;
+use qkv_rs::ops::nn::transformer::plan_transformer_block;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -43,7 +43,6 @@ fn main() {
     let input_sequence_placeholder = plan_input_placeholder(
         &mut graph,
         &[
-            args.batch_size,
             args.input_sequence_length,
             args.input_sequence_embed_dim,
         ],

@@ -7,7 +7,17 @@ pub struct RotaryPositionEmbeddingOp {
 
 impl LogicalOp for RotaryPositionEmbeddingOp {
     fn plan_forward(&self, graph: &mut LogicalGraph, inputs: &[&LogicalTensor]) -> LogicalTensor {
-        unimplemented!()
+        
+        assert_eq!(inputs.len(), 2);
+        let input = inputs[0];
+        let positions = inputs[1];
+        assert_eq!(input.shape, positions.shape);
+
+        graph.new_tensor(
+            input.shape.clone(),
+            input.value_type,
+        )
+
     }
 }
 
