@@ -1,24 +1,38 @@
 use crate::{
     logical::{LogicalGraph, LogicalOp, LogicalTensor, LogicalValueType},
     opcode::OpCode,
+    ops::basic::broadcast::plan_broadcast,
     ops::basic::slice::plan_get_element,
 };
 
-fn default_logical_binary_op(graph: &mut LogicalGraph, inputs: &[&LogicalTensor]) -> LogicalTensor {
+fn default_logical_binary_op_inputs(
+    graph: &mut LogicalGraph,
+    a: LogicalTensor,
+    b: LogicalTensor,
+) -> (LogicalTensor, LogicalTensor) {
+    if a.is_scalar() && b.is_scalar() {
+        return (a, b);
+    } else if a.is_scalar() {
+        let a_broadcast = plan_broadcast(graph, &a, &b);
+        return (a_broadcast, b);
+    } else if b.is_scalar() {
+        let b_broadcast = plan_broadcast(graph, &b, &a);
+        return (a, b_broadcast);
+    } else {
+        assert_eq!(a.shape, b.shape);
+        return (a, b);
+    }
+}
+
+fn default_logical_binary_op_output(
+    graph: &mut LogicalGraph,
+    inputs: &[&LogicalTensor],
+) -> LogicalTensor {
     assert_eq!(inputs.len(), 2);
     let a = inputs[0];
     let b = inputs[1];
-    // check for same shape or scalars
-    if a.is_scalar() && b.is_scalar() {
-        return graph.scalar_tensor(a.value_type);
-    } else if a.is_scalar() {
-        return graph.new_tensor(b.shape.clone(), b.value_type);
-    } else if b.is_scalar() {
-        return graph.new_tensor(a.shape.clone(), a.value_type);
-    } else {
-        assert_eq!(a.shape, b.shape);
-        return graph.new_tensor(a.shape.clone(), a.value_type);
-    }
+    assert_eq!(a.shape, b.shape);
+    return graph.new_tensor(a.shape.clone(), a.value_type);
 }
 
 #[derive(Debug, Clone)]
@@ -30,12 +44,14 @@ impl LogicalOp for LogicalAddOp {
         graph: &mut LogicalGraph,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
-        default_logical_binary_op(graph, inputs)
+        default_logical_binary_op_output(graph, inputs)
     }
 }
 
 pub fn plan_add(graph: &mut LogicalGraph, a: &LogicalTensor, b: &LogicalTensor) -> LogicalTensor {
-    graph.register_call(OpCode::BasicAdd(LogicalAddOp {}), &[a, b])
+    let (a, b) = default_logical_binary_op_inputs(graph, a.clone(), b.clone());
+
+    graph.register_call(OpCode::BasicAdd(LogicalAddOp {}), &[&a, &b])
 }
 
 #[derive(Debug, Clone)]
@@ -46,12 +62,14 @@ impl LogicalOp for LogicalSubOp {
         graph: &mut LogicalGraph,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
-        default_logical_binary_op(graph, inputs)
+        default_logical_binary_op_output(graph, inputs)
     }
 }
 
 pub fn plan_sub(graph: &mut LogicalGraph, a: &LogicalTensor, b: &LogicalTensor) -> LogicalTensor {
-    graph.register_call(OpCode::BasicSub(LogicalSubOp {}), &[a, b])
+    let (a, b) = default_logical_binary_op_inputs(graph, a.clone(), b.clone());
+
+    graph.register_call(OpCode::BasicSub(LogicalSubOp {}), &[&a, &b])
 }
 
 #[derive(Debug, Clone)]
@@ -62,12 +80,14 @@ impl LogicalOp for LogicalMulOp {
         graph: &mut LogicalGraph,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
-        default_logical_binary_op(graph, inputs)
+        default_logical_binary_op_output(graph, inputs)
     }
 }
 
 pub fn plan_mul(graph: &mut LogicalGraph, a: &LogicalTensor, b: &LogicalTensor) -> LogicalTensor {
-    graph.register_call(OpCode::BasicMul(LogicalMulOp {}), &[a, b])
+    let (a, b) = default_logical_binary_op_inputs(graph, a.clone(), b.clone());
+
+    graph.register_call(OpCode::BasicMul(LogicalMulOp {}), &[&a, &b])
 }
 
 #[derive(Debug, Clone)]
@@ -78,7 +98,7 @@ impl LogicalOp for LogicalDivOp {
         graph: &mut LogicalGraph,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
-        default_logical_binary_op(graph, inputs)
+        default_logical_binary_op_output(graph, inputs)
     }
 }
 
@@ -87,7 +107,9 @@ pub fn plan_divide(
     a: &LogicalTensor,
     b: &LogicalTensor,
 ) -> LogicalTensor {
-    graph.register_call(OpCode::BasicDiv(LogicalDivOp {}), &[a, b])
+    let (a, b) = default_logical_binary_op_inputs(graph, a.clone(), b.clone());
+
+    graph.register_call(OpCode::BasicDiv(LogicalDivOp {}), &[&a, &b])
 }
 
 pub fn plan_square(graph: &mut LogicalGraph, tensor: &LogicalTensor) -> LogicalTensor {

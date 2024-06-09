@@ -10,8 +10,8 @@ pub enum LogicalValueType {
 impl LogicalValueType {
     pub fn zero(&self) -> Vec<u8> {
         match self {
-            LogicalValueType::F64 => f64_value_to_bytes(0.0),
-            LogicalValueType::U32 => 0u32.to_le_bytes().to_vec(),
+            LogicalValueType::F64 => f64_value_to_bytes(1.0),
+            LogicalValueType::U32 => 1u32.to_le_bytes().to_vec(),
         }
     }
 
@@ -74,11 +74,15 @@ pub struct LogicalTensor {
 
 impl LogicalTensor {
     pub fn num_elements(&self) -> usize {
-        self.shape.iter().product()
+        if self.is_scalar() {
+            1
+        } else {
+            self.shape.iter().product()
+        }
     }
 
     pub fn is_scalar(&self) -> bool {
-        self.shape.len() == 1 && self.shape[0] == 1
+        self.shape.len() == 1 && self.shape[0] == 0
     }
 }
 
@@ -193,14 +197,14 @@ impl LogicalGraph {
     }
 
     pub fn scalar_tensor(&mut self, value_type: LogicalValueType) -> LogicalTensor {
-        self.new_tensor(vec![1], value_type)
+        self.new_tensor(vec![0], value_type)
     }
 
     pub fn scalar_f64(&mut self, value: f64) -> LogicalTensor {
         self.register_call(
             OpCode::LiteralF64(LiteralOp {
                 value: value,
-                shape: vec![1],
+                shape: vec![0],
             }),
             &[],
         )
@@ -210,7 +214,7 @@ impl LogicalGraph {
         self.register_call(
             OpCode::LiteralU32(LiteralOp {
                 value: value,
-                shape: vec![1],
+                shape: vec![0],
             }),
             &[],
         )

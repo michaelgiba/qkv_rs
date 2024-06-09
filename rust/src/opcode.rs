@@ -1,4 +1,5 @@
 use crate::logical::{LiteralOp, LogicalOp, LogicalReturnOp};
+use crate::ops::basic::broadcast::LogicalBroadcastOp;
 use crate::ops::basic::inputs::LogicalPlaceholderOp;
 use crate::ops::basic::math::{
     LogicalAddOp, LogicalDivOp, LogicalDotProductOp, LogicalMatMulOp, LogicalMulOp, LogicalSqrtOp,
@@ -15,6 +16,7 @@ use crate::ops::nn::transformer::LogicalTransformerBlockOp;
 #[derive(Debug, Clone)]
 pub enum OpCode {
     // -- Basic --
+    Broadcast(LogicalBroadcastOp),
     Return(LogicalReturnOp),
     LiteralU32(LiteralOp<u32>),
     LiteralF64(LiteralOp<f64>),
@@ -51,6 +53,7 @@ pub enum OpCode {
 impl OpCode {
     pub fn get_logical(&self) -> Box<dyn LogicalOp> {
         match &self {
+            OpCode::Broadcast(op) => Box::new(op.clone()),
             OpCode::Return(op) => Box::new(op.clone()),
             OpCode::LiteralU32(op) => Box::new(op.clone()),
             OpCode::LiteralF64(op) => Box::new(op.clone()),

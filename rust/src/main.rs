@@ -2,7 +2,7 @@ use clap::Parser;
 use qkv_rs::logical::{LogicalGraph, LogicalValueType};
 use qkv_rs::ops::basic::inputs::plan_input_placeholder;
 use qkv_rs::ops::nn::transformer::plan_transformer_block;
-use qkv_rs::physical::PhysicalGraph;
+use qkv_rs::physical::{PhysicalGraph, PhysicalTensor};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -36,6 +36,7 @@ struct Args {
     ff_output_dim: usize,
 }
 
+
 fn main() {
     let args = Args::parse();
 
@@ -59,6 +60,12 @@ fn main() {
 
     let mut physical_graph = PhysicalGraph::compile(graph, &[&transformer_output]);
 
+    physical_graph.set_value_for_tensor(
+        &input_sequence_placeholder, 
+        vec![7.0; args.input_sequence_length * args.input_sequence_embed_dim]
+    );
+
+    
     let outputs = physical_graph.compute(&transformer_output);
 
     println!("{:?}", outputs);
