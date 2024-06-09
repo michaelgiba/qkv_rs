@@ -7,10 +7,6 @@ set -euo pipefail
 # echo "Building and testing Rust project..."
 (cd ${PROJECT_ROOT}/rust && cargo build)
 
-# echo "Running Python tests..."
-# (cd ${PROJECT_ROOT}/python && pytest -s)
-
-
 
 RUST_BACKTRACE=1 ./rust/target/debug/qkv_rs \
     --batch-size 1 \
@@ -20,3 +16,6 @@ RUST_BACKTRACE=1 ./rust/target/debug/qkv_rs \
     --mha-num-heads 2 \
     --ff-hidden-dim 8 \
     --ff-output-dim 4
+
+# echo "Running Python tests..."
+# (cd ${PROJECT_ROOT}/python && pytest -s)    

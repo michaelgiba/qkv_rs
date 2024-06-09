@@ -1,14 +1,29 @@
-
 use crate::base_types::{LogicalGraph, LogicalOp, LogicalTensor, LogicalValueType};
 
+#[derive(Debug, Clone)]
+struct LogicalPlaceholderOp {
+    shape: Vec<usize>,
+    value_type: LogicalValueType,
+}
+impl LogicalOp for LogicalPlaceholderOp {
+    fn plan_forward(&self, graph: &mut LogicalGraph, inputs: &[&LogicalTensor]) -> LogicalTensor {
+        assert_eq!(inputs.len(), 0);
+        graph.new_tensor(self.shape.clone(), self.value_type)
+    }
+}
 
 pub fn plan_input_placeholder(
     graph: &mut LogicalGraph,
     shape: &[usize],
     value_type: LogicalValueType,
 ) -> LogicalTensor {
-
-    graph.new_tensor(shape.to_vec(), value_type)
+    graph.register_computation(
+        Box::new(LogicalPlaceholderOp {
+            shape: shape.to_vec(),
+            value_type,
+        }),
+        &[],
+    )
 }
 
 pub fn plan_new_weights(

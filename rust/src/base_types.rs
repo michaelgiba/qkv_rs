@@ -1,12 +1,12 @@
 use std::{collections::HashMap, fmt::Debug};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LogicalValueType {
     F64,
     U64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LogicalTensor {
     pub id: usize,
     pub shape: Vec<usize>,
@@ -66,10 +66,9 @@ impl LogicalGraph {
         graph
     }
 
-    pub fn compile(self, outputs: &[LogicalTensor]) -> PhysicalGraph {
+    pub fn compile(self) -> PhysicalGraph {
         // TODO only get the connected component to outputs before creating
         // the physical graph
-
         PhysicalGraph::new(self)
     }
 
@@ -129,12 +128,21 @@ impl LogicalGraph {
             &[],
         )
     }
+
+    pub fn get_tensor(&self, id: usize) -> &LogicalTensor {
+        self.tensor_id_to_tensor.get(&id).unwrap()
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PhysicalTensor {
     spec: LogicalTensor,
     values: Vec<u8>,
+}
+
+fn assert_physical_matches_logical(physical: &PhysicalTensor, logical: &LogicalTensor) {
+    assert_eq!(physical.spec.shape, logical.shape);
+    assert_eq!(physical.spec.value_type, logical.value_type);
 }
 
 pub struct PhysicalGraph {
@@ -146,12 +154,82 @@ impl PhysicalGraph {
         PhysicalGraph { logical_graph }
     }
 
-    pub fn forward(&self) -> PhysicalTensor {
-        // TODO
-        unimplemented!()
+    pub fn compute(&self, target: LogicalTensor) -> PhysicalTensor {
+        let mut tensor_id_to_values: HashMap<usize, PhysicalTensor> = HashMap::new();
+        let mut stack = vec![target.id];
+
+        while let Some(tensor_id) = stack.pop() {
+            // If we've already computed this value there is nothing to do
+            if tensor_id_to_values.contains_key(&tensor_id) {
+                continue;
+            }
+
+            // Otherwise we push this back on the stack and compute the dependencies
+            stack.push(tensor_id);
+            println!("{:?} ", self.logical_graph.get_tensor(tensor_id));
+
+            let call_details = self
+                .logical_graph
+                .output_tensor_id_to_callee
+                .get(&tensor_id)
+                .unwrap();
+
+            println!("{:?} ", call_details);
+
+            let uncomputed_dependency_ids: Vec<usize> = call_details
+                .input_tensor_ids
+                .iter()
+                .filter(|x| !tensor_id_to_values.contains_key(x))
+                .map(|x| *x)
+                .collect();
+
+            if uncomputed_dependency_ids.is_empty() {
+                //  We have all the dependencies, we can compute the value
+                let inputs: Vec<&PhysicalTensor> = call_details
+                    .input_tensor_ids
+                    .iter()
+                    .map(|x| tensor_id_to_values.get(x).unwrap())
+                    .collect();
+
+                let logical_output = self.logical_graph.get_tensor(tensor_id);
+
+                let physical_output =
+                    find_physical_op(&call_details.op).compute(&inputs, logical_output);
+
+                assert_physical_matches_logical(&physical_output, logical_output);
+
+                tensor_id_to_values.insert(tensor_id, physical_output);
+            } else {
+                // We need to first compute dependencies
+                uncomputed_dependency_ids
+                    .iter()
+                    .for_each(|x| stack.push(*x));
+            }
+        }
+
+        let x = tensor_id_to_values.get(&target.id);
+
+        x.unwrap().clone()
     }
 }
 
-// pub trait PhysicalOp {
-//     fn compute(&self, inputs: &[&PhysicalTensor]) -> PhysicalTensor;
-// }
+pub trait PhysicalOp {
+    fn compute(&self, inputs: &[&PhysicalTensor], output_spec: &LogicalTensor) -> PhysicalTensor;
+}
+
+#[derive(Debug)]
+pub struct PhysicalLiteralOp {}
+impl PhysicalOp for PhysicalLiteralOp {
+    fn compute(&self, _inputs: &[&PhysicalTensor], output_spec: &LogicalTensor) -> PhysicalTensor {
+        PhysicalTensor {
+            spec: output_spec.clone(),
+            values: vec![1],
+        }
+    }
+}
+
+fn find_physical_op(logical_op: &Box<dyn LogicalOp>) -> Box<dyn PhysicalOp> {
+    match logical_op.as_ref() {
+        _ => Box::new(PhysicalLiteralOp {}),
+    }
+}

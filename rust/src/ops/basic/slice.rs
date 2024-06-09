@@ -1,6 +1,5 @@
 use crate::base_types::{LogicalGraph, LogicalOp, LogicalTensor, LogicalValueType};
 
-
 #[derive(Debug, Clone)]
 struct SliceInterval {
     start: usize,
@@ -46,7 +45,6 @@ pub fn plan_slice(
     )
 }
 
-
 #[derive(Debug, Clone)]
 struct LogicalGetIndexOp {
     index: usize,
@@ -59,18 +57,14 @@ impl LogicalOp for LogicalGetIndexOp {
 
         assert!(self.index < tensor.num_elements());
 
-        graph.scalar_tensor(tensor.value_type)        
+        graph.scalar_tensor(tensor.value_type)
     }
 }
-
-
 
 pub fn plan_get_element(
     graph: &mut LogicalGraph,
     tensor: &LogicalTensor,
     index: usize,
 ) -> LogicalTensor {
-
-    graph.register_computation(Box::new(LogicalGetIndexOp{ index }), &[tensor])
-
+    graph.register_computation(Box::new(LogicalGetIndexOp { index }), &[tensor])
 }

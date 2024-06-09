@@ -42,10 +42,7 @@ fn main() {
 
     let input_sequence_placeholder = plan_input_placeholder(
         &mut graph,
-        &[
-            args.input_sequence_length,
-            args.input_sequence_embed_dim,
-        ],
+        &[args.input_sequence_length, args.input_sequence_embed_dim],
         LogicalValueType::F64,
     );
 
@@ -59,9 +56,9 @@ fn main() {
         args.ff_output_dim,
     );
 
-    let physical_graph = graph.compile(&[transformer_output]);
+    let physical_graph = graph.compile();
 
-    let outputs = physical_graph.forward();
+    let outputs = physical_graph.compute(transformer_output);
 
     println!("{:?}", outputs);
 }

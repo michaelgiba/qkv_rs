@@ -1,3 +1,4 @@
+pub mod activations;
 pub mod attention;
 pub mod dense;
 pub mod norm;

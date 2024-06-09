@@ -1,7 +1,7 @@
 use crate::base_types::LogicalGraph;
 use crate::base_types::{LogicalOp, LogicalTensor};
-use crate::ops::nn::attention::plan_multihead_attention;
 use crate::ops::basic::math::plan_add;
+use crate::ops::nn::attention::plan_multihead_attention;
 use crate::ops::nn::dense::plan_dense_op;
 use crate::ops::nn::norm::plan_rms_norm;
 
@@ -46,7 +46,7 @@ impl LogicalOp for LogicalTransformerBlockOp {
         let dense_ffw_op = plan_dense_op(
             graph,
             &normed_pre_ffw,
-            self.mha_head_dim,
+            self.embed_dim,
             self.ff_hidden_dim,
             self.ff_output_dim,
         );
