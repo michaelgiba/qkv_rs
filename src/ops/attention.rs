@@ -37,7 +37,7 @@ impl LogicalOp for LogicalAttentionHeadOp {
 
 pub fn plan_multihead_attention(
     graph: &mut LogicalGraph,
-    inputs: &[&LogicalTensor],
+    input_seq: &LogicalTensor,
     input_embed_dim: usize,
     output_head_dim: usize,
     num_heads: usize,
@@ -63,7 +63,7 @@ pub fn plan_multihead_attention(
         ),
     };
 
-    let head_outputs = head_op.plan_forward(graph, inputs);
+    let head_outputs = head_op.plan_forward(graph, &[input_seq]);
     let concatted_head_outputs = plan_concat(graph, &[&head_outputs]);
 
     concatted_head_outputs

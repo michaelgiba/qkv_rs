@@ -25,6 +25,6 @@ impl LogicalOp for LogicalRmsNormOp {
     }
 }
 
-pub fn plan_rms_norm(graph: &mut LogicalGraph, inputs: &[&LogicalTensor]) -> LogicalTensor {
-    LogicalRmsNormOp {}.plan_forward(graph, inputs)
+pub fn plan_rms_norm(graph: &mut LogicalGraph, tensor: &LogicalTensor) -> LogicalTensor {
+    LogicalRmsNormOp {}.plan_forward(graph, &[tensor])
 }

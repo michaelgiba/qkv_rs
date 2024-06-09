@@ -23,12 +23,12 @@ impl LogicalOp for LogicalTransformerBlockOp {
         let residual_stream_t0 = inputs[0];
 
         // 1. Apply layer normalization
-        let normed_input = plan_rms_norm(graph, &[residual_stream_t0]);
+        let normed_input = plan_rms_norm(graph, residual_stream_t0);
 
         // 2. Apply multi-head attention
         let multi_head_attention_output = plan_multihead_attention(
             graph,
-            &[&normed_input],
+            &normed_input,
             self.embed_dim,
             self.head_dim,
             self.num_heads,
@@ -38,7 +38,7 @@ impl LogicalOp for LogicalTransformerBlockOp {
         let residual_stream_t1 = plan_add(graph, residual_stream_t0, &multi_head_attention_output);
 
         // 4. Peform normalization before feed forward
-        let normed_pre_ffw = plan_rms_norm(graph, &[&residual_stream_t1]);
+        let normed_pre_ffw = plan_rms_norm(graph, &residual_stream_t1);
 
         // 5. Apply feed forward layer
         let dense_ffw_op = plan_dense_op(
@@ -55,7 +55,7 @@ impl LogicalOp for LogicalTransformerBlockOp {
 
 pub fn plan_transformer_block(
     graph: &mut LogicalGraph,
-    inputs: &[&LogicalTensor],
+    input_seq: &LogicalTensor,
     embed_dim: usize,
     hidden_dim: usize,
     num_heads: usize,
@@ -68,5 +68,5 @@ pub fn plan_transformer_block(
         head_dim: head_dim,
     };
 
-    op.plan_forward(graph, inputs)
+    op.plan_forward(graph, &[input_seq])
 }

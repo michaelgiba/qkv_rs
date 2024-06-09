@@ -15,7 +15,7 @@ fn main() {
 
     let transformer_output = plan_transformer_block(
         &mut graph,
-        &[&input_sequence_placeholder],
+        &input_sequence_placeholder,
         EMBEDDING_DIM,
         10,
         10,
