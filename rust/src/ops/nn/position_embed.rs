@@ -22,7 +22,7 @@ pub fn plan_rope(
     positions: &LogicalTensor,
     head_dim: usize,
 ) -> LogicalTensor {
-    graph.register_computation(
+    graph.register_call(
         Box::new(RotaryPositionEmbeddingOp { head_dim: head_dim }),
         &[inputs, positions],
     )

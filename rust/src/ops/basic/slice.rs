@@ -37,7 +37,7 @@ pub fn plan_slice(
     tensor: &LogicalTensor,
     slice: &[SliceInterval],
 ) -> LogicalTensor {
-    graph.register_computation(
+    graph.register_call(
         Box::new(LogicalSliceOp {
             slices: slice.to_vec(),
         }),
@@ -66,5 +66,5 @@ pub fn plan_get_element(
     tensor: &LogicalTensor,
     index: usize,
 ) -> LogicalTensor {
-    graph.register_computation(Box::new(LogicalGetIndexOp { index }), &[tensor])
+    graph.register_call(Box::new(LogicalGetIndexOp { index }), &[tensor])
 }

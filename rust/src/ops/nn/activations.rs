@@ -13,5 +13,5 @@ impl LogicalOp for LogicalSoftmaxOp {
 }
 
 pub fn plan_softmax(graph: &mut LogicalGraph, input: &LogicalTensor) -> LogicalTensor {
-    graph.register_computation(Box::new(LogicalSoftmaxOp {}), &[input])
+    graph.register_call(Box::new(LogicalSoftmaxOp {}), &[input])
 }

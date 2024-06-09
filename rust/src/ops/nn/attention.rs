@@ -1,7 +1,7 @@
 use std::result;
 
 use crate::base_types::{LogicalGraph, LogicalOp, LogicalTensor, LogicalValueType};
-use crate::ops::basic::inputs::plan_new_weights;
+use crate::ops::basic::inputs::{plan_input_placeholder, plan_new_weights};
 use crate::ops::basic::math::plan_concat;
 use crate::ops::basic::math::{plan_dot_product, plan_mat_mul};
 use crate::ops::nn::activations::plan_softmax;
@@ -39,7 +39,7 @@ impl LogicalOp for LogicalAttentionHeadOp {
 
         // apply rope just before attention on Q and K
 
-        let positions = graph.new_tensor(q_proj.shape.clone(), q_proj.value_type);
+        let positions = plan_input_placeholder(graph, q_proj.shape.as_slice(), q_proj.value_type);
 
         let q_proj = plan_rope(graph, &q_proj, &positions, self.output_head_dim);
         let k_proj = plan_rope(graph, &k_proj, &positions, self.output_head_dim);
@@ -66,7 +66,7 @@ pub fn plan_attention_head(
         output_head_dim: output_head_dim,
     };
 
-    graph.register_computation(Box::new(head_op), &[input_seq])
+    graph.register_call(Box::new(head_op), &[input_seq])
 }
 
 pub fn plan_multihead_attention(

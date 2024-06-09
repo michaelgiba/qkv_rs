@@ -24,5 +24,5 @@ impl LogicalOp for LogicalRmsNormOp {
 }
 
 pub fn plan_rms_norm(graph: &mut LogicalGraph, tensor: &LogicalTensor) -> LogicalTensor {
-    graph.register_computation(Box::new(LogicalRmsNormOp {}), &[tensor])
+    graph.register_call(Box::new(LogicalRmsNormOp {}), &[tensor])
 }

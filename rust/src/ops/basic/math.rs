@@ -30,7 +30,7 @@ impl LogicalOp for LogicalAddOp {
 }
 
 pub fn plan_add(graph: &mut LogicalGraph, a: &LogicalTensor, b: &LogicalTensor) -> LogicalTensor {
-    graph.register_computation(Box::new(LogicalAddOp {}), &[a, b])
+    graph.register_call(Box::new(LogicalAddOp {}), &[a, b])
 }
 
 #[derive(Debug, Clone)]
@@ -42,7 +42,7 @@ impl LogicalOp for LogicalSubOp {
 }
 
 pub fn plan_sub(graph: &mut LogicalGraph, a: &LogicalTensor, b: &LogicalTensor) -> LogicalTensor {
-    graph.register_computation(Box::new(LogicalSubOp {}), &[a, b])
+    graph.register_call(Box::new(LogicalSubOp {}), &[a, b])
 }
 
 #[derive(Debug, Clone)]
@@ -54,7 +54,7 @@ impl LogicalOp for LogicalMulOp {
 }
 
 pub fn plan_mul(graph: &mut LogicalGraph, a: &LogicalTensor, b: &LogicalTensor) -> LogicalTensor {
-    graph.register_computation(Box::new(LogicalMulOp {}), &[a, b])
+    graph.register_call(Box::new(LogicalMulOp {}), &[a, b])
 }
 
 #[derive(Debug, Clone)]
@@ -70,7 +70,7 @@ pub fn plan_divide(
     a: &LogicalTensor,
     b: &LogicalTensor,
 ) -> LogicalTensor {
-    graph.register_computation(Box::new(LogicalDivOp {}), &[a, b])
+    graph.register_call(Box::new(LogicalDivOp {}), &[a, b])
 }
 
 pub fn plan_square(graph: &mut LogicalGraph, tensor: &LogicalTensor) -> LogicalTensor {
@@ -101,7 +101,7 @@ impl LogicalOp for LogicalSumOp {
 }
 
 pub fn plan_sum(graph: &mut LogicalGraph, tensor: &LogicalTensor) -> LogicalTensor {
-    graph.register_computation(Box::new(LogicalSumOp {}), &[tensor])
+    graph.register_call(Box::new(LogicalSumOp {}), &[tensor])
 }
 
 #[derive(Debug, Clone)]
@@ -117,7 +117,7 @@ impl LogicalOp for LogicalSqrtOp {
 }
 
 pub fn plan_sqrt(graph: &mut LogicalGraph, tensor: &LogicalTensor) -> LogicalTensor {
-    graph.register_computation(Box::new(LogicalSqrtOp {}), &[tensor])
+    graph.register_call(Box::new(LogicalSqrtOp {}), &[tensor])
 }
 
 #[derive(Debug, Clone)]
@@ -146,7 +146,7 @@ pub fn plan_mat_mul(
     a: &LogicalTensor,
     b: &LogicalTensor,
 ) -> LogicalTensor {
-    graph.register_computation(Box::new(LogicalMatMulOp {}), &[a, b])
+    graph.register_call(Box::new(LogicalMatMulOp {}), &[a, b])
 }
 
 #[derive(Debug, Clone)]
@@ -171,7 +171,7 @@ pub fn plan_dot_product(
     a: &LogicalTensor,
     b: &LogicalTensor,
 ) -> LogicalTensor {
-    graph.register_computation(Box::new(LogicalDotProductOp {}), &[a, b])
+    graph.register_call(Box::new(LogicalDotProductOp {}), &[a, b])
 }
 
 #[derive(Debug, Clone)]
@@ -210,5 +210,5 @@ pub fn plan_concat(
     tensors: &[&LogicalTensor],
     axis: usize,
 ) -> LogicalTensor {
-    graph.register_computation(Box::new(LogicalConcatOp { axis }), tensors)
+    graph.register_call(Box::new(LogicalConcatOp { axis }), tensors)
 }

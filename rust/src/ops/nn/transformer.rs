@@ -72,5 +72,5 @@ pub fn plan_transformer_block(
         ff_output_dim: ff_output_dim,
     };
 
-    graph.register_computation(Box::new(op), &[input_seq])
+    graph.register_call(Box::new(op), &[input_seq])
 }

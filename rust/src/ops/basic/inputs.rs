@@ -17,7 +17,7 @@ pub fn plan_input_placeholder(
     shape: &[usize],
     value_type: LogicalValueType,
 ) -> LogicalTensor {
-    graph.register_computation(
+    graph.register_call(
         Box::new(LogicalPlaceholderOp {
             shape: shape.to_vec(),
             value_type,

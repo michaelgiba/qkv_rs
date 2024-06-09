@@ -56,9 +56,9 @@ fn main() {
         args.ff_output_dim,
     );
 
-    let physical_graph = graph.compile();
+    let mut physical_graph = graph.compile(&transformer_output);
 
-    let outputs = physical_graph.compute(transformer_output);
+    let outputs = physical_graph.compute(&transformer_output);
 
     println!("{:?}", outputs);
 }

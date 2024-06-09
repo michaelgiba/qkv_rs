@@ -45,5 +45,5 @@ pub fn plan_dense_op(
         output_dim: output_dim,
     };
 
-    graph.register_computation(Box::new(op), &[input])
+    graph.register_call(Box::new(op), &[input])
 }
