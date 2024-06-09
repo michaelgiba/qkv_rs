@@ -1,7 +1,8 @@
 use clap::Parser;
-use qkv_rs::base_types::{LogicalGraph, LogicalValueType};
+use qkv_rs::logical::{LogicalGraph, LogicalValueType};
 use qkv_rs::ops::basic::inputs::plan_input_placeholder;
 use qkv_rs::ops::nn::transformer::plan_transformer_block;
+use qkv_rs::physical::PhysicalGraph;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -56,7 +57,7 @@ fn main() {
         args.ff_output_dim,
     );
 
-    let mut physical_graph = graph.compile(&transformer_output);
+    let mut physical_graph = PhysicalGraph::compile(graph, &[&transformer_output]);
 
     let outputs = physical_graph.compute(&transformer_output);
 

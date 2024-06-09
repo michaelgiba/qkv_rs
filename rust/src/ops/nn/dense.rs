@@ -1,5 +1,6 @@
-use crate::base_types::LogicalGraph;
-use crate::base_types::{LogicalOp, LogicalTensor, LogicalValueType};
+use crate::logical::LogicalGraph;
+use crate::logical::{LogicalOp, LogicalTensor, LogicalValueType};
+use crate::opcode::OpCodes;
 use crate::ops::basic::inputs::plan_new_weights;
 use crate::ops::basic::math::plan_mat_mul;
 
@@ -11,7 +12,11 @@ pub struct LogicalDenseOp {
 }
 
 impl LogicalOp for LogicalDenseOp {
-    fn plan_forward(&self, graph: &mut LogicalGraph, inputs: &[&LogicalTensor]) -> LogicalTensor {
+    fn logical_forward(
+        &self,
+        graph: &mut LogicalGraph,
+        inputs: &[&LogicalTensor],
+    ) -> LogicalTensor {
         let input = inputs[0];
 
         let w1 = plan_new_weights(
@@ -29,6 +34,10 @@ impl LogicalOp for LogicalDenseOp {
         let ff1_output = plan_mat_mul(graph, &ff1_hidden, &w2);
 
         ff1_output
+    }
+
+    fn opcode(&self) -> OpCodes {
+        OpCodes::NnDense
     }
 }
 

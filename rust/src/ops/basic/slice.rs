@@ -1,4 +1,5 @@
-use crate::base_types::{LogicalGraph, LogicalOp, LogicalTensor, LogicalValueType};
+use crate::logical::{LogicalGraph, LogicalOp, LogicalTensor, LogicalValueType};
+use crate::opcode::OpCodes;
 
 #[derive(Debug, Clone)]
 struct SliceInterval {
@@ -12,7 +13,11 @@ struct LogicalSliceOp {
 }
 
 impl LogicalOp for LogicalSliceOp {
-    fn plan_forward(&self, graph: &mut LogicalGraph, inputs: &[&LogicalTensor]) -> LogicalTensor {
+    fn logical_forward(
+        &self,
+        graph: &mut LogicalGraph,
+        inputs: &[&LogicalTensor],
+    ) -> LogicalTensor {
         assert_eq!(inputs.len(), 1);
         let tensor = inputs[0];
         assert_eq!(tensor.shape.len(), self.slices.len());
@@ -29,6 +34,10 @@ impl LogicalOp for LogicalSliceOp {
         );
 
         output
+    }
+
+    fn opcode(&self) -> OpCodes {
+        OpCodes::BasicSlice
     }
 }
 
@@ -51,13 +60,21 @@ struct LogicalGetIndexOp {
 }
 
 impl LogicalOp for LogicalGetIndexOp {
-    fn plan_forward(&self, graph: &mut LogicalGraph, inputs: &[&LogicalTensor]) -> LogicalTensor {
+    fn logical_forward(
+        &self,
+        graph: &mut LogicalGraph,
+        inputs: &[&LogicalTensor],
+    ) -> LogicalTensor {
         assert_eq!(inputs.len(), 1);
         let tensor = inputs[0];
 
         assert!(self.index < tensor.num_elements());
 
         graph.scalar_tensor(tensor.value_type)
+    }
+
+    fn opcode(&self) -> OpCodes {
+        OpCodes::BasicGetIndex
     }
 }
 

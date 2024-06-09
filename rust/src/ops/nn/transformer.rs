@@ -1,5 +1,6 @@
-use crate::base_types::LogicalGraph;
-use crate::base_types::{LogicalOp, LogicalTensor};
+use crate::logical::LogicalGraph;
+use crate::logical::{LogicalOp, LogicalTensor};
+use crate::opcode::OpCodes;
 use crate::ops::basic::math::plan_add;
 use crate::ops::nn::attention::plan_multihead_attention;
 use crate::ops::nn::dense::plan_dense_op;
@@ -15,7 +16,11 @@ pub struct LogicalTransformerBlockOp {
 }
 
 impl LogicalOp for LogicalTransformerBlockOp {
-    fn plan_forward(&self, graph: &mut LogicalGraph, inputs: &[&LogicalTensor]) -> LogicalTensor {
+    fn logical_forward(
+        &self,
+        graph: &mut LogicalGraph,
+        inputs: &[&LogicalTensor],
+    ) -> LogicalTensor {
         // 1. An input is provided as an N item array of embeddings (N, D_emb)
         // 2. We compute Q, K, V for each head. Each of them have shape (N, D_head)
         // 3. We compute the dot product of Q and K. The output of the dot product is shape (N, N)
@@ -52,6 +57,10 @@ impl LogicalOp for LogicalTransformerBlockOp {
         );
 
         dense_ffw_op
+    }
+
+    fn opcode(&self) -> OpCodes {
+        OpCodes::NnTransformer
     }
 }
 

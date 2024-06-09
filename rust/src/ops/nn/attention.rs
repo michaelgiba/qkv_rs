@@ -1,6 +1,7 @@
 use std::result;
 
-use crate::base_types::{LogicalGraph, LogicalOp, LogicalTensor, LogicalValueType};
+use crate::logical::{LogicalGraph, LogicalOp, LogicalTensor, LogicalValueType};
+use crate::opcode::OpCodes;
 use crate::ops::basic::inputs::{plan_input_placeholder, plan_new_weights};
 use crate::ops::basic::math::plan_concat;
 use crate::ops::basic::math::{plan_dot_product, plan_mat_mul};
@@ -14,7 +15,11 @@ pub struct LogicalAttentionHeadOp {
 }
 
 impl LogicalOp for LogicalAttentionHeadOp {
-    fn plan_forward(&self, graph: &mut LogicalGraph, inputs: &[&LogicalTensor]) -> LogicalTensor {
+    fn logical_forward(
+        &self,
+        graph: &mut LogicalGraph,
+        inputs: &[&LogicalTensor],
+    ) -> LogicalTensor {
         let x = inputs[0];
 
         let q_weights = plan_new_weights(
@@ -52,6 +57,10 @@ impl LogicalOp for LogicalAttentionHeadOp {
         let attended_v_proj = plan_mat_mul(graph, &attention_activations, &v_proj); // [seq_n, output_head_dim]
 
         attended_v_proj
+    }
+
+    fn opcode(&self) -> OpCodes {
+        OpCodes::NnAttention
     }
 }
 
