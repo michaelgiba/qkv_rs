@@ -10,7 +10,7 @@ impl LogicalOp for LogicalPlaceholderOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 0);

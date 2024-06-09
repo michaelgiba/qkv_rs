@@ -2,7 +2,7 @@ use crate::logical::{LogicalGraph, LogicalOp, LogicalTensor};
 use crate::opcode::OpCode;
 
 #[derive(Debug, Clone)]
-struct SliceInterval {
+pub struct SliceInterval {
     start: usize,
     end: usize,
 }
@@ -16,7 +16,7 @@ impl LogicalOp for LogicalSliceOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 1);
@@ -60,7 +60,7 @@ impl LogicalOp for LogicalGetIndexOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 1);
@@ -68,7 +68,7 @@ impl LogicalOp for LogicalGetIndexOp {
 
         assert!(self.index < tensor.num_elements());
 
-        graph.scalar_tensor(tensor.value_type)
+        graph.new_scalar_tensor(tensor.value_type)
     }
 }
 
@@ -85,24 +85,25 @@ pub fn plan_get_element(
 
 #[derive(Debug, Clone)]
 pub struct LogicalConcatOp {
-    axis: usize,
+    pub axis: usize,
 }
 
 impl LogicalOp for LogicalConcatOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert!(!inputs.is_empty());
+        assert!(self.axis < 2, "Only 2D tensors are supported for now");
+        assert!(self.axis < inputs[0].shape.len(), "Axis out of bounds");
+
         let first_input = inputs[0];
         let dims = first_input.shape.len();
 
-        // check that all inputs have the same shape except for the axis
         for i in 1..inputs.len() {
             assert_eq!(inputs[i].shape.len(), dims);
-            // check types are the same
             assert_eq!(inputs[i].value_type, first_input.value_type);
 
             for j in 0..dims {
@@ -125,4 +126,26 @@ pub fn plan_concat(
     axis: usize,
 ) -> LogicalTensor {
     graph.register_call(OpCode::BasicConcat(LogicalConcatOp { axis }), tensors)
+}
+
+#[derive(Debug, Clone)]
+pub struct LogicalTransposeOp {}
+
+impl LogicalOp for LogicalTransposeOp {
+    fn logical_forward(
+        &self,
+        graph: &mut LogicalGraph,
+        _name: String,
+        inputs: &[&LogicalTensor],
+    ) -> LogicalTensor {
+        assert_eq!(inputs.len(), 1);
+        let a = inputs[0];
+        assert_eq!(a.shape.len(), 2);
+
+        graph.new_tensor(vec![a.shape[1], a.shape[0]], a.value_type)
+    }
+}
+
+pub fn plan_transpose(graph: &mut LogicalGraph, tensors: &[&LogicalTensor]) -> LogicalTensor {
+    graph.register_call(OpCode::BasicTranspose(LogicalTransposeOp {}), tensors)
 }

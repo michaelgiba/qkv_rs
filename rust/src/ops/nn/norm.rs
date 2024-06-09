@@ -8,12 +8,12 @@ impl LogicalOp for LogicalRmsNormOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         let input = inputs[0];
 
-        let num_elem = graph.scalar_f64(input.num_elements() as f64);
+        let num_elem = graph.scalar_literal_f64(input.num_elements() as f64);
 
         let squared = plan_square(graph, input);
         let sum_squares = plan_sum(graph, &squared);
@@ -21,7 +21,7 @@ impl LogicalOp for LogicalRmsNormOp {
         let mean_sum_square = plan_divide(graph, &sum_squares, &num_elem);
 
         let sum_squares_sqrt = plan_sqrt(graph, &mean_sum_square);
-        let scalar_one = graph.scalar_f64(1.0);
+        let scalar_one = graph.scalar_literal_f64(1.0);
         let inverse_sum_squares_sqrt = plan_divide(graph, &scalar_one, &sum_squares_sqrt);
         let normed_input = plan_mul(graph, input, &inverse_sum_squares_sqrt);
 

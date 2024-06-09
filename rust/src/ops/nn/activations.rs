@@ -9,7 +9,7 @@ impl LogicalOp for LogicalSoftmaxOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 1);

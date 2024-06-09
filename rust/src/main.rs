@@ -2,7 +2,7 @@ use clap::Parser;
 use qkv_rs::logical::{LogicalGraph, LogicalValueType};
 use qkv_rs::ops::basic::inputs::plan_input_placeholder;
 use qkv_rs::ops::nn::transformer::plan_transformer_block;
-use qkv_rs::physical::{PhysicalGraph, PhysicalTensor};
+use qkv_rs::physical::PhysicalGraph;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -36,6 +36,36 @@ struct Args {
     ff_output_dim: usize,
 }
 
+fn fill_parameters(logical_graph: &mut LogicalGraph, physical_graph: &mut PhysicalGraph) {
+    let w_mha_0q0 = logical_graph.get_tensor_by_name("NnAttention_0_q_weights");
+    let w_mha_0k0 = logical_graph.get_tensor_by_name("NnAttention_0_k_weights");
+    let w_mha_0v0 = logical_graph.get_tensor_by_name("NnAttention_0_v_weights");
+    let w_mha_0pos0 = logical_graph.get_tensor_by_name("NnAttention_0_positions");
+    let w_mha_0q1 = logical_graph.get_tensor_by_name("NnAttention_1_q_weights");
+    let w_mha_0k1 = logical_graph.get_tensor_by_name("NnAttention_1_k_weights");
+    let w_mha_0v1 = logical_graph.get_tensor_by_name("NnAttention_1_v_weights");
+    let w_mha_0pos1 = logical_graph.get_tensor_by_name("NnAttention_1_positions");
+    let w_mha_out = logical_graph.get_tensor_by_name("NnMha_0_out_weights");
+
+    let ff_w1 = logical_graph.get_tensor_by_name("NnDense_0_ff_w1");
+    let ff_w2 = logical_graph.get_tensor_by_name("NnDense_0_ff_w2");
+
+    physical_graph.set_value_for_tensor(&w_mha_0q0, vec![7.0; w_mha_0q0.num_elements()]);
+    physical_graph.set_value_for_tensor(&w_mha_0k0, vec![11.0; w_mha_0k0.num_elements()]);
+    physical_graph.set_value_for_tensor(&w_mha_0v0, vec![13.0; w_mha_0v0.num_elements()]);
+    physical_graph.set_value_for_tensor(&w_mha_0pos0, vec![17.0; w_mha_0pos0.num_elements()]);
+
+    physical_graph.set_value_for_tensor(&w_mha_0q1, vec![3.0; w_mha_0q1.num_elements()]);
+    physical_graph.set_value_for_tensor(&w_mha_0k1, vec![5.0; w_mha_0k1.num_elements()]);
+    physical_graph.set_value_for_tensor(&w_mha_0v1, vec![19.0; w_mha_0v1.num_elements()]);
+    physical_graph.set_value_for_tensor(&w_mha_0pos1, vec![23.0; w_mha_0pos1.num_elements()]);
+
+    physical_graph.set_value_for_tensor(&w_mha_out, vec![1.0; w_mha_out.num_elements()]);
+
+    physical_graph.set_value_for_tensor(&ff_w1, vec![1.0; ff_w1.num_elements()]);
+    physical_graph.set_value_for_tensor(&ff_w2, vec![1.0; ff_w2.num_elements()]);
+}
+
 fn main() {
     let args = Args::parse();
 
@@ -58,15 +88,14 @@ fn main() {
         args.ff_output_dim,
     );
 
-    let weights_tensor = graph.get_tensor_by_name("NnAttention_0_q_weights");
+    let mut physical_graph = PhysicalGraph::compile(&graph, &[&transformer_output]);
 
-    let mut physical_graph = PhysicalGraph::compile(graph, &[&transformer_output]);
+    fill_parameters(&mut graph, &mut physical_graph);
 
-    physical_graph.set_value_for_tensor(&weights_tensor, vec![7.0; weights_tensor.num_elements()]);
-
+    // Provide input values
     physical_graph.set_value_for_tensor(
         &input_sequence_placeholder,
-        vec![7.0; args.input_sequence_length * args.input_sequence_embed_dim],
+        vec![7.0; input_sequence_placeholder.num_elements()],
     );
 
     let outputs = physical_graph.compute(&transformer_output);

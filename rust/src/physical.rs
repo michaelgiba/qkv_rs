@@ -1,7 +1,6 @@
 use crate::{
-    logical::{LogicalGraph, LogicalGraphCall, LogicalOp, LogicalTensor, LogicalValueType},
+    logical::{LogicalGraph, LogicalGraphCall, LogicalTensor, LogicalValueType},
     opcode::OpCode,
-    ops::basic::inputs,
 };
 use core::{f64, panic};
 use std::{collections::HashMap, collections::HashSet, fmt::Debug};
@@ -41,7 +40,7 @@ impl PhysicalValue {
         }
     }
 
-    pub fn add(&self, other: PhysicalValue) -> PhysicalValue {
+    pub fn add(&self, other: &PhysicalValue) -> PhysicalValue {
         let f64_value = self.as_f64() + other.as_f64();
         PhysicalValue {
             value_type: self.value_type,
@@ -49,7 +48,7 @@ impl PhysicalValue {
         }
     }
 
-    pub fn sub(&self, other: PhysicalValue) -> PhysicalValue {
+    pub fn sub(&self, other: &PhysicalValue) -> PhysicalValue {
         let f64_value = self.as_f64() - other.as_f64();
         PhysicalValue {
             value_type: self.value_type,
@@ -57,7 +56,7 @@ impl PhysicalValue {
         }
     }
 
-    pub fn mul(&self, other: PhysicalValue) -> PhysicalValue {
+    pub fn mul(&self, other: &PhysicalValue) -> PhysicalValue {
         let f64_value = self.as_f64() * other.as_f64();
         PhysicalValue {
             value_type: self.value_type,
@@ -65,7 +64,7 @@ impl PhysicalValue {
         }
     }
 
-    pub fn div(&self, other: PhysicalValue) -> PhysicalValue {
+    pub fn div(&self, other: &PhysicalValue) -> PhysicalValue {
         let f64_value = self.as_f64() / other.as_f64();
         PhysicalValue {
             value_type: self.value_type,
@@ -75,6 +74,14 @@ impl PhysicalValue {
 
     pub fn sqrt(&self) -> PhysicalValue {
         let f64_value = self.as_f64().sqrt();
+        PhysicalValue {
+            value_type: self.value_type,
+            value: self.value_type.from_f64(f64_value),
+        }
+    }
+
+    pub fn exp(&self) -> PhysicalValue {
+        let f64_value = self.as_f64().exp();
         PhysicalValue {
             value_type: self.value_type,
             value: self.value_type.from_f64(f64_value),
@@ -169,11 +176,10 @@ pub struct PhysicalGraphCall {
 pub struct PhysicalGraph {
     tensor_id_to_tensor: HashMap<usize, PhysicalTensor>,
     tensor_id_to_calls: HashMap<usize, Vec<PhysicalGraphCall>>,
-    outputs: Vec<usize>,
 }
 
 impl PhysicalGraph {
-    pub fn compile(logical_graph: LogicalGraph, outputs: &[&LogicalTensor]) -> PhysicalGraph {
+    pub fn compile(logical_graph: &LogicalGraph, outputs: &[&LogicalTensor]) -> PhysicalGraph {
         let mut tensor_id_to_tensor: HashMap<usize, PhysicalTensor> = HashMap::new();
         let mut tensor_id_to_calls: HashMap<usize, Vec<PhysicalGraphCall>> = HashMap::new();
         let output_ids: Vec<usize> = outputs.iter().map(|x| x.id).collect();
@@ -223,7 +229,6 @@ impl PhysicalGraph {
         PhysicalGraph {
             tensor_id_to_tensor,
             tensor_id_to_calls: tensor_id_to_calls,
-            outputs: output_ids,
         }
     }
 
@@ -318,7 +323,6 @@ impl PhysicalOp for PhysicalLiteralF64Op {
         for i in 0..output.num_elements() {
             output.set_element(i, PhysicalValue::from_f64(self.value));
         }
-        println!("{:?} {:?} {:?}", self, _inputs, output);
     }
 }
 
@@ -328,8 +332,6 @@ pub struct PhysicalLiteralU32Op {
 }
 impl PhysicalOp for PhysicalLiteralU32Op {
     fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, _inputs, output);
-
         for i in 0..output.num_elements() {
             output.set_element(i, PhysicalValue::from_u32(self.value));
         }
@@ -341,7 +343,6 @@ impl PhysicalOp for PhysicalLiteralU32Op {
 pub struct PhysicalBroadcastOp {}
 impl PhysicalOp for PhysicalBroadcastOp {
     fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, _inputs, output);
         let x = _inputs[0].get_scalar_value();
         for i in 0..output.num_elements() {
             output.set_element(i, x.clone());
@@ -357,7 +358,6 @@ impl PhysicalOp for PhysicalPassthroughOp {
         for i in 0..input.num_elements() {
             output.set_element(i, input.get_element(i));
         }
-        println!("{:?} {:?} {:?}", self, input, output);
     }
 }
 
@@ -368,9 +368,8 @@ impl PhysicalOp for PhysicalAddOp {
         for i in 0..output.num_elements() {
             let a = inputs[0].get_element(i);
             let b = inputs[1].get_element(i);
-            output.set_element(i, a.add(b));
+            output.set_element(i, a.add(&b));
         }
-        println!("{:?} {:?} {:?}", self, inputs, output);
     }
 }
 
@@ -378,11 +377,10 @@ impl PhysicalOp for PhysicalAddOp {
 pub struct PhysicalSubOp {}
 impl PhysicalOp for PhysicalSubOp {
     fn physical_forward(&self, inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, inputs, output);
         for i in 0..output.num_elements() {
             let a = inputs[0].get_element(i);
             let b = inputs[1].get_element(i);
-            output.set_element(i, a.sub(b));
+            output.set_element(i, a.sub(&b));
         }
     }
 }
@@ -394,7 +392,7 @@ impl PhysicalOp for PhysicalMulOp {
         for i in 0..output.num_elements() {
             let a = inputs[0].get_element(i);
             let b = inputs[1].get_element(i);
-            output.set_element(i, a.mul(b));
+            output.set_element(i, a.mul(&b));
         }
     }
 }
@@ -403,11 +401,10 @@ impl PhysicalOp for PhysicalMulOp {
 pub struct PhysicalDivOp {}
 impl PhysicalOp for PhysicalDivOp {
     fn physical_forward(&self, inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, inputs, output);
         for i in 0..output.num_elements() {
             let a = inputs[0].get_element(i);
             let b = inputs[1].get_element(i);
-            output.set_element(i, a.div(b));
+            output.set_element(i, a.div(&b));
         }
     }
 }
@@ -423,34 +420,84 @@ impl PhysicalOp for PhysicalGetIndexOp {
 }
 
 #[derive(Debug, Clone)]
-pub struct PhysicalConcatOp {}
+pub struct PhysicalConcatOp {
+    axis: usize,
+}
 impl PhysicalOp for PhysicalConcatOp {
-    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, _inputs, output);
+    fn physical_forward(&self, inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        // TODO: Make this not bad
+        // Concatenate all of the inputs along the `axis`
+        let output_shape = output.spec.shape.clone();
+        if self.axis == 0 {
+            let mut offset = 0;
+            for input in inputs {
+                for i in 0..input.num_elements() {
+                    output.set_element(offset + i, input.get_element(i));
+                }
+                offset += input.num_elements();
+            }
+        } else if self.axis == 1 {
+            let mut offset = 0;
+            for row in 0..output_shape[0] {
+                for input in inputs {
+                    let ncols = input.spec.shape[1];
+                    for i in 0..ncols {
+                        output.set_element(offset + i, input.get_element(row * ncols + i));
+                    }
+                    offset += ncols;
+                }
+            }
+        } else {
+            panic!("Only 0 or 1 are allowed for Axis. {:?} is not", self.axis);
+        }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct PhysicalPlaceholderOp {}
 impl PhysicalOp for PhysicalPlaceholderOp {
-    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, _inputs, output);
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], _output: &mut PhysicalTensor) {}
+}
+
+#[derive(Debug, Clone)]
+pub struct PhysicalTransposeOp {}
+impl PhysicalOp for PhysicalTransposeOp {
+    fn physical_forward(&self, inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        let a = inputs[0];
+        let n = a.spec.shape[0];
+        let m = a.spec.shape[1];
+
+        let a = inputs[0];
+        for i in 0..n {
+            for j in 0..m {
+                output.set_element(j * n + i, a.get_element(i * m + j));
+            }
+        }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct PhysicalDotProductOp {}
 impl PhysicalOp for PhysicalDotProductOp {
-    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, _inputs, output);
+    fn physical_forward(&self, inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        let a = inputs[0];
+        let b = inputs[1];
+
+        let mut sum = PhysicalValue::zero(a.spec.value_type);
+        for i in 0..a.spec.shape[0] {
+            let a_value = a.get_element(i);
+            let b_value = b.get_element(i);
+            sum = sum.add(&a_value.mul(&b_value));
+        }
+        output.set_scalar_value(sum);
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct PhysicalSumOp {}
 impl PhysicalOp for PhysicalSumOp {
-    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, _inputs, output);
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], _output: &mut PhysicalTensor) {
+        panic!("Not implemeneted directly yet.");
     }
 }
 
@@ -468,64 +515,109 @@ impl PhysicalOp for PhysicalSqrtOp {
 #[derive(Debug, Clone)]
 pub struct PhysicalMatMulOp {}
 impl PhysicalOp for PhysicalMatMulOp {
-    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, _inputs, output);
+    fn physical_forward(&self, inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        let a = inputs[0]; // N x M
+        let b = inputs[1]; // M x P
+
+        let n = a.spec.shape[0];
+        let m = a.spec.shape[1];
+        let p = b.spec.shape[1];
+
+        for i in 0..n {
+            for j in 0..p {
+                let mut sum = PhysicalValue::zero(a.spec.value_type);
+                for l in 0..m {
+                    let a_value = a.get_element(i * m + l); // l-th value of i-th row of A
+                    let b_value = b.get_element(p * l + j); // l-th value of j-th col of B
+                    sum = sum.add(&a_value.mul(&b_value));
+                }
+                output.set_element(i * p + j, sum);
+            }
+        }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct PhysicalSliceOp {}
 impl PhysicalOp for PhysicalSliceOp {
-    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, _inputs, output);
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], _output: &mut PhysicalTensor) {
+        panic!("Not implemeneted directly yet.");
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct PhysicalNnSoftmaxOp {}
 impl PhysicalOp for PhysicalNnSoftmaxOp {
-    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, _inputs, output);
+    fn physical_forward(&self, inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        let input = inputs[0];
+
+        // Get the max logit for numerical stability to prevent overflows.
+        // https://stats.stackexchange.com/questions/304758/softmax-overflow
+        let mut max_input_logit = input.get_element(0);
+        for i in 1..input.num_elements() {
+            let value = input.get_element(i);
+            if value.as_f64() > max_input_logit.as_f64() {
+                max_input_logit = value;
+            }
+        }
+
+        let mut sum = PhysicalValue::zero(input.spec.value_type);
+        for i in 0..input.num_elements() {
+            let x = input.get_element(i).sub(&max_input_logit);
+            let x_exp = x.exp();
+
+            sum = sum.add(&x_exp);
+        }
+
+        for i in 0..input.num_elements() {
+            let value = input.get_element(i).sub(&max_input_logit).exp();
+            let value = value.div(&sum);
+            output.set_element(i, value);
+        }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct PhysicalNnAttentionOp {}
 impl PhysicalOp for PhysicalNnAttentionOp {
-    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, _inputs, output);
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], _output: &mut PhysicalTensor) {
+        panic!("Not implemeneted directly yet. Only through lower level ops.");
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct PhysicalNnDenseOp {}
 impl PhysicalOp for PhysicalNnDenseOp {
-    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, _inputs, output);
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], _output: &mut PhysicalTensor) {
+        panic!("Not implemeneted directly yet. Only through lower level ops.");
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct PhysicalNnRmsNormOp {}
 impl PhysicalOp for PhysicalNnRmsNormOp {
-    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, _inputs, output);
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], _output: &mut PhysicalTensor) {
+        panic!("Not implemeneted directly yet. Only through lower level ops.");
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct PhysicalNnRopeOp {}
 impl PhysicalOp for PhysicalNnRopeOp {
-    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, _inputs, output);
+    fn physical_forward(&self, inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        println!("Warning! Rope is NOT IMPLEMENETED YET.");
+        let input = inputs[0];
+        for i in 0..input.num_elements() {
+            output.set_element(i, input.get_element(i));
+        }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct PhysicalNnTransformerOp {}
 impl PhysicalOp for PhysicalNnTransformerOp {
-    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, _inputs, output);
+    fn physical_forward(&self, _inputs: &[&PhysicalTensor], _output: &mut PhysicalTensor) {
+        panic!("Not implemeneted directly yet. Only through lower level ops.");
     }
 }
 
@@ -535,6 +627,7 @@ pub enum PhysicalOpType {
     LiteralF64(PhysicalLiteralF64Op),
     LiteralU32(PhysicalLiteralU32Op),
     Placeholder(PhysicalPlaceholderOp),
+    Transpose(PhysicalTransposeOp),
     Concat(PhysicalConcatOp),
     Passthrough(PhysicalPassthroughOp),
     GetIndex(PhysicalGetIndexOp),
@@ -559,6 +652,7 @@ impl PhysicalOpType {
     pub fn get_physical(&self) -> Box<dyn PhysicalOp> {
         match &self {
             PhysicalOpType::Broadcast(op) => Box::new(op.clone()),
+            PhysicalOpType::Transpose(op) => Box::new(op.clone()),
             PhysicalOpType::LiteralF64(op) => Box::new(op.clone()),
             PhysicalOpType::LiteralU32(op) => Box::new(op.clone()),
             PhysicalOpType::Placeholder(op) => Box::new(op.clone()),
@@ -591,13 +685,14 @@ fn logical_call_to_physical_op(logical_call: &LogicalGraphCall) -> PhysicalOpTyp
         OpCode::LiteralU32(op) => {
             PhysicalOpType::LiteralU32(PhysicalLiteralU32Op { value: op.value })
         }
+        OpCode::BasicTranspose(_) => PhysicalOpType::Transpose(PhysicalTransposeOp {}),
         OpCode::LiteralF64(op) => {
             PhysicalOpType::LiteralF64(PhysicalLiteralF64Op { value: op.value })
         }
         OpCode::BasicGetIndex(op) => {
             PhysicalOpType::GetIndex(PhysicalGetIndexOp { index: op.index })
         }
-        OpCode::BasicConcat(_) => PhysicalOpType::Concat(PhysicalConcatOp {}),
+        OpCode::BasicConcat(op) => PhysicalOpType::Concat(PhysicalConcatOp { axis: op.axis }),
         OpCode::BasicPlaceholder(_) => PhysicalOpType::Placeholder(PhysicalPlaceholderOp {}),
         OpCode::BasicAdd(_) => PhysicalOpType::Add(PhysicalAddOp {}),
         OpCode::BasicMul(_) => PhysicalOpType::Mul(PhysicalMulOp {}),

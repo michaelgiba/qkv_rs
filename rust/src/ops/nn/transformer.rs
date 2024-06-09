@@ -19,7 +19,7 @@ impl LogicalOp for LogicalTransformerBlockOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         // 1. An input is provided as an N item array of embeddings (N, D_emb)
@@ -43,21 +43,19 @@ impl LogicalOp for LogicalTransformerBlockOp {
         );
 
         // // 3. Join back with residual stream
-        // let residual_stream_t1 = plan_add(graph, residual_stream_t0, &multi_head_attention_output);
+        let residual_stream_t1 = plan_add(graph, residual_stream_t0, &multi_head_attention_output);
 
         // // 4. Peform normalization before feed forward
-        // let normed_pre_ffw = plan_rms_norm(graph, &residual_stream_t1);
-
+        let normed_pre_ffw = plan_rms_norm(graph, &residual_stream_t1);
         // // 5. Apply feed forward layer
-        // let dense_ffw_op = plan_dense_op(
-        //     graph,
-        //     &normed_pre_ffw,
-        //     self.embed_dim,
-        //     self.ff_hidden_dim,
-        //     self.ff_output_dim,
-        // );
-
-        multi_head_attention_output
+        let dense_ffw_op = plan_dense_op(
+            graph,
+            &normed_pre_ffw,
+            self.embed_dim,
+            self.ff_hidden_dim,
+            self.ff_output_dim,
+        );
+        dense_ffw_op
     }
 }
 

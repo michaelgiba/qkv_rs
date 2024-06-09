@@ -5,7 +5,9 @@ use crate::ops::basic::math::{
     LogicalAddOp, LogicalDivOp, LogicalDotProductOp, LogicalMatMulOp, LogicalMulOp, LogicalSqrtOp,
     LogicalSubOp, LogicalSumOp,
 };
-use crate::ops::basic::slice::{LogicalConcatOp, LogicalGetIndexOp, LogicalSliceOp};
+use crate::ops::basic::slice::{
+    LogicalConcatOp, LogicalGetIndexOp, LogicalSliceOp, LogicalTransposeOp,
+};
 use crate::ops::nn::activations::LogicalSoftmaxOp;
 use crate::ops::nn::attention::LogicalAttentionHeadOp;
 use crate::ops::nn::dense::LogicalDenseOp;
@@ -22,6 +24,8 @@ pub enum OpCode {
     LiteralF64(LiteralOp<f64>),
     BasicGetIndex(LogicalGetIndexOp),
     BasicConcat(LogicalConcatOp),
+    BasicTranspose(LogicalTransposeOp),
+
     // Inputs
     BasicPlaceholder(LogicalPlaceholderOp),
     // Math
@@ -59,6 +63,7 @@ impl OpCode {
             OpCode::LiteralF64(op) => Box::new(op.clone()),
             OpCode::BasicGetIndex(op) => Box::new(op.clone()),
             OpCode::BasicConcat(op) => Box::new(op.clone()),
+            OpCode::BasicTranspose(op) => Box::new(op.clone()),
             OpCode::BasicPlaceholder(op) => Box::new(op.clone()),
             OpCode::BasicAdd(op) => Box::new(op.clone()),
             OpCode::BasicMul(op) => Box::new(op.clone()),
@@ -86,6 +91,7 @@ impl OpCode {
             OpCode::LiteralF64(_) => "LiteralF64",
             OpCode::BasicGetIndex(_) => "BasicGetIndex",
             OpCode::BasicConcat(_) => "BasicConcat",
+            OpCode::BasicTranspose(_) => "BasicTranspose",
             OpCode::BasicPlaceholder(_) => "BasicPlaceholder",
             OpCode::BasicAdd(_) => "BasicAdd",
             OpCode::BasicMul(_) => "BasicMul",

@@ -2,15 +2,13 @@ use crate::logical::{LogicalGraph, LogicalOp, LogicalTensor};
 use crate::opcode::OpCode;
 
 #[derive(Debug, Clone)]
-pub struct RotaryPositionEmbeddingOp {
-    head_dim: usize,
-}
+pub struct RotaryPositionEmbeddingOp {}
 
 impl LogicalOp for RotaryPositionEmbeddingOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 2);
@@ -26,10 +24,10 @@ pub fn plan_rope(
     graph: &mut LogicalGraph,
     inputs: &LogicalTensor,
     positions: &LogicalTensor,
-    head_dim: usize,
+    _head_dim: usize,
 ) -> LogicalTensor {
     graph.register_call(
-        OpCode::NnRope(RotaryPositionEmbeddingOp { head_dim: head_dim }),
+        OpCode::NnRope(RotaryPositionEmbeddingOp {}),
         &[inputs, positions],
     )
 }

@@ -104,7 +104,7 @@ impl LogicalOp for LiteralOp<f64> {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         _inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         graph.new_tensor(self.shape.clone(), LogicalValueType::F64)
@@ -115,7 +115,7 @@ impl LogicalOp for LiteralOp<u32> {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         _inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         graph.new_tensor(self.shape.clone(), LogicalValueType::U32)
@@ -123,14 +123,12 @@ impl LogicalOp for LiteralOp<u32> {
 }
 
 #[derive(Debug, Clone)]
-pub struct LogicalReturnOp {
-    returned_from_op: Box<OpCode>,
-}
+pub struct LogicalReturnOp {}
 impl LogicalOp for LogicalReturnOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 1);
@@ -195,23 +193,13 @@ impl LogicalGraph {
         name: String,
     ) -> LogicalTensor {
         self.record_invocation(&op);
-        println!(
-            "Registering call: {} with inputs: {:?}",
-            name,
-            inputs.iter().map(|t| t.id).collect::<Vec<usize>>()
-        );
 
         let output = op.get_logical().logical_forward(self, name.clone(), inputs);
 
         let input_tensor_ids: Vec<usize> = inputs.iter().map(|t| t.id).collect();
 
         if self.output_tensor_id_to_call.contains_key(&output.id) {
-            return self.register_call(
-                OpCode::Return(LogicalReturnOp {
-                    returned_from_op: Box::new(op),
-                }),
-                &[&output],
-            );
+            return self.register_call(OpCode::Return(LogicalReturnOp {}), &[&output]);
         }
 
         // If a name already exists for this tensor, raise an error
@@ -249,11 +237,11 @@ impl LogicalGraph {
         self.new_tensor(vec![], LogicalValueType::F64)
     }
 
-    pub fn scalar_tensor(&mut self, value_type: LogicalValueType) -> LogicalTensor {
+    pub fn new_scalar_tensor(&mut self, value_type: LogicalValueType) -> LogicalTensor {
         self.new_tensor(vec![0], value_type)
     }
 
-    pub fn scalar_f64(&mut self, value: f64) -> LogicalTensor {
+    pub fn scalar_literal_f64(&mut self, value: f64) -> LogicalTensor {
         self.register_call(
             OpCode::LiteralF64(LiteralOp {
                 value: value,
@@ -263,7 +251,7 @@ impl LogicalGraph {
         )
     }
 
-    pub fn scalar_u32(&mut self, value: u32) -> LogicalTensor {
+    pub fn scalar_literal_u32(&mut self, value: u32) -> LogicalTensor {
         self.register_call(
             OpCode::LiteralU32(LiteralOp {
                 value: value,
@@ -278,7 +266,10 @@ impl LogicalGraph {
     }
 
     pub fn get_tensor_by_name(&self, name: &str) -> LogicalTensor {
-        let id = self.named_tensors.get(name).unwrap();
+        let id = self
+            .named_tensors
+            .get(name)
+            .expect(format!("No tensor with name: {}", name).as_str());
         self.get_tensor(*id).clone()
     }
 }

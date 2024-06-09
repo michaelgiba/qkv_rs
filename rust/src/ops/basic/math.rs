@@ -49,7 +49,7 @@ impl LogicalOp for LogicalAddOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         default_logical_binary_op_output(graph, inputs)
@@ -68,7 +68,7 @@ impl LogicalOp for LogicalSubOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         default_logical_binary_op_output(graph, inputs)
@@ -87,7 +87,7 @@ impl LogicalOp for LogicalMulOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         default_logical_binary_op_output(graph, inputs)
@@ -106,7 +106,7 @@ impl LogicalOp for LogicalDivOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         default_logical_binary_op_output(graph, inputs)
@@ -134,7 +134,7 @@ impl LogicalOp for LogicalSumOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 1);
@@ -144,7 +144,7 @@ impl LogicalOp for LogicalSumOp {
             return input.clone();
         }
 
-        let mut sum = graph.scalar_f64(0.0);
+        let mut sum = graph.scalar_literal_f64(0.0);
 
         for i in 0..input.num_elements() {
             let elem = plan_get_element(graph, input, i);
@@ -166,7 +166,7 @@ impl LogicalOp for LogicalSqrtOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 1);
@@ -187,7 +187,7 @@ impl LogicalOp for LogicalMatMulOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 2);
@@ -197,6 +197,7 @@ impl LogicalOp for LogicalMatMulOp {
         assert_eq!(a.shape.len(), 2);
         assert_eq!(b.shape.len(), 2);
         assert_eq!(a.shape[1], b.shape[0]);
+        assert_eq!(a.value_type, b.value_type);
 
         let mut shape = vec![];
         shape.push(a.shape[0]);
@@ -221,18 +222,19 @@ impl LogicalOp for LogicalDotProductOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
-        name: String,
+        _name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 2);
         let a = inputs[0]; // [seq_len, head_dim]
         let b = inputs[1]; // [seq_len, head_dim]
 
-        assert_eq!(a.shape.len(), 2);
-        assert_eq!(b.shape.len(), 2);
+        println!("{:?} {:?}", a.shape, b.shape);
+        assert_eq!(a.shape.len(), 1);
+        assert_eq!(b.shape.len(), 1);
         assert_eq!(a.shape[0], b.shape[0]);
 
-        graph.new_tensor([a.shape[0], a.shape[0]].to_vec(), LogicalValueType::F64)
+        graph.new_scalar_tensor(LogicalValueType::F64)
     }
 }
 
