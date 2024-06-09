@@ -7,9 +7,10 @@ use crate::ops::norm::plan_rms_norm;
 
 pub struct LogicalTransformerBlockOp {
     embed_dim: usize,
-    hidden_dim: usize,
-    num_heads: usize,
-    head_dim: usize,
+    mha_num_heads: usize,
+    mha_head_dim: usize,
+    ff_hidden_dim: usize,
+    ff_output_dim: usize,
 }
 
 impl LogicalOp for LogicalTransformerBlockOp {
@@ -30,8 +31,8 @@ impl LogicalOp for LogicalTransformerBlockOp {
             graph,
             &normed_input,
             self.embed_dim,
-            self.head_dim,
-            self.num_heads,
+            self.mha_head_dim,
+            self.mha_num_heads,
         );
 
         // 3. Join back with residual stream
@@ -43,10 +44,10 @@ impl LogicalOp for LogicalTransformerBlockOp {
         // 5. Apply feed forward layer
         let dense_ffw_op = plan_dense_op(
             graph,
-            &[&normed_pre_ffw],
-            self.head_dim,
-            self.hidden_dim,
-            self.embed_dim,
+            &normed_pre_ffw,
+            self.mha_head_dim,
+            self.ff_hidden_dim,
+            self.ff_output_dim,
         );
 
         dense_ffw_op
@@ -57,15 +58,17 @@ pub fn plan_transformer_block(
     graph: &mut LogicalGraph,
     input_seq: &LogicalTensor,
     embed_dim: usize,
-    hidden_dim: usize,
-    num_heads: usize,
-    head_dim: usize,
+    mha_num_heads: usize,
+    mha_head_dim: usize,
+    ff_hidden_dim: usize,
+    ff_output_dim: usize,
 ) -> LogicalTensor {
     let op = LogicalTransformerBlockOp {
         embed_dim: embed_dim,
-        hidden_dim: hidden_dim,
-        num_heads: num_heads,
-        head_dim: head_dim,
+        mha_num_heads: mha_num_heads,
+        mha_head_dim: mha_head_dim,
+        ff_hidden_dim: ff_hidden_dim,
+        ff_output_dim: ff_output_dim,
     };
 
     op.plan_forward(graph, &[input_seq])

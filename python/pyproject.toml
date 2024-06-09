@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qkv_rs_python_tests"
+version = "0.1.0"
+description = "Tests to validate the outputs of qkv_rs"
+dependencies = []   # List runtime dependencies here
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "flake8",
+    "isort",
+    "pytest",
+    "numpy"
+]
+
+[tool.pytest.ini_options]
+# pytest configuration options (e.g., testpaths, addopts, etc.)
+# Example:
+testpaths = ["tests"]
+addopts = "-v" 
+
+[tool.flake8]
+max-line-length = 88  # Align with Black
+extend-ignore = ["E203"] # Black and flake8 disagree on whitespace before ':'
+# Add other flake8 rules as needed
+
+[tool.isort]
+profile = "black"       # Configure isort to match Black's style
+multi_line_output = 3  # Vertical hanging indent for imports
+include_trailing_comma = true  # Add trailing commas in multi-line imports

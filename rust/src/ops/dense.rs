@@ -23,7 +23,7 @@ impl LogicalOp for LogicalDenseOp {
 
 pub fn plan_dense_op(
     graph: &mut LogicalGraph,
-    inputs: &[&LogicalTensor],
+    input: &LogicalTensor,
     input_dim: usize,
     hidden_dim: usize,
     output_dim: usize,
@@ -36,5 +36,5 @@ pub fn plan_dense_op(
         w2: plan_new_weights(graph, &[hidden_dim, output_dim], LogicalValueType::F64),
     };
 
-    op.plan_forward(graph, inputs)
+    op.plan_forward(graph, &[input])
 }
