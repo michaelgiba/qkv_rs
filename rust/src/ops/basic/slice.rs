@@ -52,7 +52,7 @@ pub fn plan_slice(
 
 #[derive(Debug, Clone)]
 pub struct LogicalGetIndexOp {
-    index: usize,
+    pub index: usize,
 }
 
 impl LogicalOp for LogicalGetIndexOp {

@@ -32,31 +32,31 @@ impl LogicalOp for LogicalTransformerBlockOp {
         // 1. Apply layer normalization
         let normed_input = plan_rms_norm(graph, residual_stream_t0);
 
-        // 2. Apply multi-head attention
-        let multi_head_attention_output = plan_multihead_attention(
-            graph,
-            &normed_input,
-            self.embed_dim,
-            self.mha_head_dim,
-            self.mha_num_heads,
-        );
+        // // 2. Apply multi-head attention
+        // let multi_head_attention_output = plan_multihead_attention(
+        //     graph,
+        //     &normed_input,
+        //     self.embed_dim,
+        //     self.mha_head_dim,
+        //     self.mha_num_heads,
+        // );
 
-        // 3. Join back with residual stream
-        let residual_stream_t1 = plan_add(graph, residual_stream_t0, &multi_head_attention_output);
+        // // 3. Join back with residual stream
+        // let residual_stream_t1 = plan_add(graph, residual_stream_t0, &multi_head_attention_output);
 
-        // 4. Peform normalization before feed forward
-        let normed_pre_ffw = plan_rms_norm(graph, &residual_stream_t1);
+        // // 4. Peform normalization before feed forward
+        // let normed_pre_ffw = plan_rms_norm(graph, &residual_stream_t1);
 
-        // 5. Apply feed forward layer
-        let dense_ffw_op = plan_dense_op(
-            graph,
-            &normed_pre_ffw,
-            self.embed_dim,
-            self.ff_hidden_dim,
-            self.ff_output_dim,
-        );
+        // // 5. Apply feed forward layer
+        // let dense_ffw_op = plan_dense_op(
+        //     graph,
+        //     &normed_pre_ffw,
+        //     self.embed_dim,
+        //     self.ff_hidden_dim,
+        //     self.ff_output_dim,
+        // );
 
-        dense_ffw_op
+        normed_input
     }
 }
 

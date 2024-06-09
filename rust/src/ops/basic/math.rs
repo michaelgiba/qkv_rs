@@ -10,6 +10,13 @@ fn default_logical_binary_op_inputs(
     a: LogicalTensor,
     b: LogicalTensor,
 ) -> (LogicalTensor, LogicalTensor) {
+    if a.value_type != b.value_type {
+        panic!(
+            "Cannot perform binary operation on tensors of different value types: {:?} and {:?}.",
+            a.value_type, b.value_type
+        );
+    }
+
     if a.is_scalar() && b.is_scalar() {
         return (a, b);
     } else if a.is_scalar() {

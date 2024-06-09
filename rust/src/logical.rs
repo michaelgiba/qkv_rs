@@ -10,8 +10,8 @@ pub enum LogicalValueType {
 impl LogicalValueType {
     pub fn zero(&self) -> Vec<u8> {
         match self {
-            LogicalValueType::F64 => f64_value_to_bytes(1.0),
-            LogicalValueType::U32 => 1u32.to_le_bytes().to_vec(),
+            LogicalValueType::F64 => f64_value_to_bytes(0.0),
+            LogicalValueType::U32 => 0u32.to_le_bytes().to_vec(),
         }
     }
 
