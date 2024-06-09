@@ -81,12 +81,11 @@ pub struct PhysicalTensor {
 
 impl PhysicalTensor {
     pub fn alloc(spec: LogicalTensor) -> PhysicalTensor {
-
         if spec.is_scalar() {
             PhysicalTensor {
                 spec: spec.clone(),
                 // We put the actual value of scalar in values even though the shape is scalar [0]
-                values: vec![1; spec.value_type.size()],  
+                values: vec![1; spec.value_type.size()],
             }
         } else {
             PhysicalTensor {
@@ -95,7 +94,6 @@ impl PhysicalTensor {
             }
         }
     }
-
 
     pub fn num_elements(&self) -> usize {
         self.spec.num_elements()
@@ -130,7 +128,6 @@ impl PhysicalTensor {
         assert!(self.is_scalar());
         self.get_element(0)
     }
-
 }
 
 #[derive(Debug, Clone)]
@@ -237,7 +234,7 @@ impl PhysicalGraph {
         assert_eq!(values.len(), tensor.num_elements());
 
         let mut physical_tensor = PhysicalTensor::alloc(tensor.clone());
-        
+
         for (i, &value) in values.iter().enumerate() {
             let physical_value = match tensor.value_type {
                 LogicalValueType::F64 => PhysicalValue::from_f64(value),
@@ -337,9 +334,6 @@ pub struct PhysicalAddOp {}
 impl PhysicalOp for PhysicalAddOp {
     fn physical_forward(&self, inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
         println!("{:?} {:?} {:?}", self, inputs, output);
-        
-
-        
 
         for i in 0..output.num_elements() {
             let a = inputs[0].get_element(i);

@@ -36,7 +36,6 @@ struct Args {
     ff_output_dim: usize,
 }
 
-
 fn main() {
     let args = Args::parse();
 
@@ -61,11 +60,10 @@ fn main() {
     let mut physical_graph = PhysicalGraph::compile(graph, &[&transformer_output]);
 
     physical_graph.set_value_for_tensor(
-        &input_sequence_placeholder, 
-        vec![7.0; args.input_sequence_length * args.input_sequence_embed_dim]
+        &input_sequence_placeholder,
+        vec![7.0; args.input_sequence_length * args.input_sequence_embed_dim],
     );
 
-    
     let outputs = physical_graph.compute(&transformer_output);
 
     println!("{:?}", outputs);
