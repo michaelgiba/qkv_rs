@@ -2,6 +2,7 @@ use crate::base_types::LogicalGraph;
 use crate::base_types::{LogicalOp, LogicalTensor, LogicalValueType};
 use crate::ops::basic::{plan_mat_mul, plan_new_weights};
 
+#[derive(Debug)]
 pub struct LogicalDenseOp {
     input_dim: usize,
     hidden_dim: usize,
@@ -36,5 +37,5 @@ pub fn plan_dense_op(
         w2: plan_new_weights(graph, &[hidden_dim, output_dim], LogicalValueType::F64),
     };
 
-    op.plan_forward(graph, &[input])
+    graph.register_computation(Box::new(op), &[input])
 }

@@ -5,6 +5,7 @@ use crate::ops::basic::plan_add;
 use crate::ops::dense::plan_dense_op;
 use crate::ops::norm::plan_rms_norm;
 
+#[derive(Debug)]
 pub struct LogicalTransformerBlockOp {
     embed_dim: usize,
     mha_num_heads: usize,
@@ -71,5 +72,5 @@ pub fn plan_transformer_block(
         ff_output_dim: ff_output_dim,
     };
 
-    op.plan_forward(graph, &[input_seq])
+    graph.register_computation(Box::new(op), &[input_seq])
 }

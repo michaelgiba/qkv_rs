@@ -10,6 +10,7 @@ python/venv/
 python/*.egg-info
 python/dist/
 python/build/
+.venv/
 
 # Rust-specific ignores
 rust/target/
