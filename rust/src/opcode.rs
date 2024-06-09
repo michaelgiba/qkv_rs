@@ -77,4 +77,31 @@ impl OpCode {
             OpCode::NnTransformer(op) => Box::new(op.clone()),
         }
     }
+
+    pub fn name(&self) -> &'static str {
+        match &self {
+            OpCode::Broadcast(_) => "Broadcast",
+            OpCode::Return(_) => "Return",
+            OpCode::LiteralU32(_) => "LiteralU32",
+            OpCode::LiteralF64(_) => "LiteralF64",
+            OpCode::BasicGetIndex(_) => "BasicGetIndex",
+            OpCode::BasicConcat(_) => "BasicConcat",
+            OpCode::BasicPlaceholder(_) => "BasicPlaceholder",
+            OpCode::BasicAdd(_) => "BasicAdd",
+            OpCode::BasicMul(_) => "BasicMul",
+            OpCode::BasicDiv(_) => "BasicDiv",
+            OpCode::BasicSub(_) => "BasicSub",
+            OpCode::BasicDotProduct(_) => "BasicDotProduct",
+            OpCode::BasicSum(_) => "BasicSum",
+            OpCode::BasicSqrt(_) => "BasicSqrt",
+            OpCode::BasicMatMul(_) => "BasicMatMul",
+            OpCode::BasicSlice(_) => "BasicSlice",
+            OpCode::NnSoftmax(_) => "NnSoftmax",
+            OpCode::NnAttention(_) => "NnAttention",
+            OpCode::NnDense(_) => "NnDense",
+            OpCode::NnRmsNorm(_) => "NnRmsNorm",
+            OpCode::NnRope(_) => "NnRope",
+            OpCode::NnTransformer(_) => "NnTransformer",
+        }
+    }
 }

@@ -16,6 +16,7 @@ impl LogicalOp for LogicalSliceOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 1);
@@ -59,6 +60,7 @@ impl LogicalOp for LogicalGetIndexOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 1);
@@ -90,6 +92,7 @@ impl LogicalOp for LogicalConcatOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert!(!inputs.is_empty());

@@ -365,8 +365,6 @@ impl PhysicalOp for PhysicalPassthroughOp {
 pub struct PhysicalAddOp {}
 impl PhysicalOp for PhysicalAddOp {
     fn physical_forward(&self, inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, inputs, output);
-
         for i in 0..output.num_elements() {
             let a = inputs[0].get_element(i);
             let b = inputs[1].get_element(i);
@@ -393,21 +391,11 @@ impl PhysicalOp for PhysicalSubOp {
 pub struct PhysicalMulOp {}
 impl PhysicalOp for PhysicalMulOp {
     fn physical_forward(&self, inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("start {:?} {:?} {:?}", self, inputs, output);
         for i in 0..output.num_elements() {
             let a = inputs[0].get_element(i);
             let b = inputs[1].get_element(i);
-
-            println!(
-                "{:?} {:?} {:?} a mul b {:?}",
-                a.clone(),
-                b.clone(),
-                output.get_element(i),
-                a.clone().mul(b.clone())
-            );
             output.set_element(i, a.mul(b));
         }
-        println!("end {:?} {:?} {:?}", self, inputs, output);
     }
 }
 
@@ -430,8 +418,6 @@ pub struct PhysicalGetIndexOp {
 }
 impl PhysicalOp for PhysicalGetIndexOp {
     fn physical_forward(&self, inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("{:?} {:?} {:?}", self, inputs, output);
-
         output.set_scalar_value(inputs[0].get_element(self.index));
     }
 }

@@ -45,6 +45,7 @@ fn main() {
         &mut graph,
         &[args.input_sequence_length, args.input_sequence_embed_dim],
         LogicalValueType::F64,
+        "input_sequence".to_string(),
     );
 
     let transformer_output = plan_transformer_block(
@@ -57,7 +58,11 @@ fn main() {
         args.ff_output_dim,
     );
 
+    let weights_tensor = graph.get_tensor_by_name("NnAttention_0_q_weights");
+
     let mut physical_graph = PhysicalGraph::compile(graph, &[&transformer_output]);
+
+    physical_graph.set_value_for_tensor(&weights_tensor, vec![7.0; weights_tensor.num_elements()]);
 
     physical_graph.set_value_for_tensor(
         &input_sequence_placeholder,

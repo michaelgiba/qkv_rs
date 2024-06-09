@@ -8,6 +8,7 @@ impl LogicalOp for LogicalRmsNormOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         let input = inputs[0];

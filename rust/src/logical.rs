@@ -87,8 +87,12 @@ impl LogicalTensor {
 }
 
 pub trait LogicalOp: Debug {
-    fn logical_forward(&self, graph: &mut LogicalGraph, inputs: &[&LogicalTensor])
-        -> LogicalTensor;
+    fn logical_forward(
+        &self,
+        graph: &mut LogicalGraph,
+        name: String,
+        inputs: &[&LogicalTensor],
+    ) -> LogicalTensor;
 }
 #[derive(Debug, Clone)]
 pub struct LiteralOp<T> {
@@ -100,6 +104,7 @@ impl LogicalOp for LiteralOp<f64> {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         _inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         graph.new_tensor(self.shape.clone(), LogicalValueType::F64)
@@ -110,6 +115,7 @@ impl LogicalOp for LiteralOp<u32> {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         _inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         graph.new_tensor(self.shape.clone(), LogicalValueType::U32)
@@ -124,6 +130,7 @@ impl LogicalOp for LogicalReturnOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 1);
@@ -142,6 +149,8 @@ pub struct LogicalGraphCall {
 pub struct LogicalGraph {
     tensor_id_to_tensor: HashMap<usize, LogicalTensor>,
     output_tensor_id_to_call: HashMap<usize, LogicalGraphCall>,
+    named_tensors: HashMap<String, usize>,
+    opcode_name_to_count: HashMap<&'static str, usize>,
 }
 
 impl LogicalGraph {
@@ -149,13 +158,50 @@ impl LogicalGraph {
         let mut graph = LogicalGraph {
             tensor_id_to_tensor: HashMap::new(),
             output_tensor_id_to_call: HashMap::new(),
+            named_tensors: HashMap::new(),
+            opcode_name_to_count: HashMap::new(),
         };
         graph.empty_tensor();
         graph
     }
 
+    pub fn iter_named_tensors(&self) -> impl Iterator<Item = (&String, &LogicalTensor)> {
+        self.named_tensors
+            .iter()
+            .map(move |(name, id)| (name, self.get_tensor(*id)))
+    }
+
+    fn record_invocation(&mut self, op: &OpCode) {
+        let op_name = op.name();
+        let op_count = self.opcode_name_to_count.entry(op_name).or_insert(0);
+        *op_count += 1;
+    }
+
+    fn get_current_op_name(&mut self, op: &OpCode) -> String {
+        let op_name = op.name();
+        let op_count = self.opcode_name_to_count.entry(op_name).or_insert(0);
+        format!("{}_{}", op_name, op_count)
+    }
+
     pub fn register_call(&mut self, op: OpCode, inputs: &[&LogicalTensor]) -> LogicalTensor {
-        let output = op.get_logical().logical_forward(self, inputs);
+        let default_name = self.get_current_op_name(&op);
+        self.register_call_with_name(op, inputs, default_name)
+    }
+
+    pub fn register_call_with_name(
+        &mut self,
+        op: OpCode,
+        inputs: &[&LogicalTensor],
+        name: String,
+    ) -> LogicalTensor {
+        self.record_invocation(&op);
+        println!(
+            "Registering call: {} with inputs: {:?}",
+            name,
+            inputs.iter().map(|t| t.id).collect::<Vec<usize>>()
+        );
+
+        let output = op.get_logical().logical_forward(self, name.clone(), inputs);
 
         let input_tensor_ids: Vec<usize> = inputs.iter().map(|t| t.id).collect();
 
@@ -168,12 +214,19 @@ impl LogicalGraph {
             );
         }
 
+        // If a name already exists for this tensor, raise an error
+        if self.named_tensors.contains_key(&name) {
+            panic!("Tensor already exists for name: {}", name);
+        }
+
         let call = LogicalGraphCall {
             op: op,
             input_tensor_ids,
             output_tensor_id: output.id,
         };
         self.output_tensor_id_to_call.insert(output.id, call);
+        self.named_tensors.insert(name.to_string(), output.id);
+
         output
     }
 
@@ -222,5 +275,10 @@ impl LogicalGraph {
 
     pub fn get_tensor(&self, id: usize) -> &LogicalTensor {
         self.tensor_id_to_tensor.get(&id).unwrap()
+    }
+
+    pub fn get_tensor_by_name(&self, name: &str) -> LogicalTensor {
+        let id = self.named_tensors.get(name).unwrap();
+        self.get_tensor(*id).clone()
     }
 }

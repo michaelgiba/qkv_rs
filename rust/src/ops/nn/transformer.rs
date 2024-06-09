@@ -19,6 +19,7 @@ impl LogicalOp for LogicalTransformerBlockOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         // 1. An input is provided as an N item array of embeddings (N, D_emb)
@@ -32,14 +33,14 @@ impl LogicalOp for LogicalTransformerBlockOp {
         // 1. Apply layer normalization
         let normed_input = plan_rms_norm(graph, residual_stream_t0);
 
-        // // 2. Apply multi-head attention
-        // let multi_head_attention_output = plan_multihead_attention(
-        //     graph,
-        //     &normed_input,
-        //     self.embed_dim,
-        //     self.mha_head_dim,
-        //     self.mha_num_heads,
-        // );
+        // 2. Apply multi-head attention
+        let multi_head_attention_output = plan_multihead_attention(
+            graph,
+            &normed_input,
+            self.embed_dim,
+            self.mha_head_dim,
+            self.mha_num_heads,
+        );
 
         // // 3. Join back with residual stream
         // let residual_stream_t1 = plan_add(graph, residual_stream_t0, &multi_head_attention_output);
@@ -56,7 +57,7 @@ impl LogicalOp for LogicalTransformerBlockOp {
         //     self.ff_output_dim,
         // );
 
-        normed_input
+        multi_head_attention_output
     }
 }
 

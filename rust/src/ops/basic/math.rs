@@ -49,6 +49,7 @@ impl LogicalOp for LogicalAddOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         default_logical_binary_op_output(graph, inputs)
@@ -67,6 +68,7 @@ impl LogicalOp for LogicalSubOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         default_logical_binary_op_output(graph, inputs)
@@ -85,6 +87,7 @@ impl LogicalOp for LogicalMulOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         default_logical_binary_op_output(graph, inputs)
@@ -103,6 +106,7 @@ impl LogicalOp for LogicalDivOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         default_logical_binary_op_output(graph, inputs)
@@ -130,6 +134,7 @@ impl LogicalOp for LogicalSumOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 1);
@@ -161,6 +166,7 @@ impl LogicalOp for LogicalSqrtOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 1);
@@ -181,6 +187,7 @@ impl LogicalOp for LogicalMatMulOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 2);
@@ -214,6 +221,7 @@ impl LogicalOp for LogicalDotProductOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         assert_eq!(inputs.len(), 2);

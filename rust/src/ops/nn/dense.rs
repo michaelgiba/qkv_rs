@@ -15,6 +15,7 @@ impl LogicalOp for LogicalDenseOp {
     fn logical_forward(
         &self,
         graph: &mut LogicalGraph,
+        name: String,
         inputs: &[&LogicalTensor],
     ) -> LogicalTensor {
         let input = inputs[0];
@@ -23,11 +24,13 @@ impl LogicalOp for LogicalDenseOp {
             graph,
             &[self.input_dim, self.hidden_dim],
             LogicalValueType::F64,
+            format!("{}_w1", name),
         );
         let w2 = plan_new_weights(
             graph,
             &[self.hidden_dim, self.output_dim],
             LogicalValueType::F64,
+            format!("{}_w2", name),
         );
 
         let ff1_hidden = plan_mat_mul(graph, &input, &w1);
