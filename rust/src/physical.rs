@@ -577,6 +577,26 @@ impl PhysicalOp for PhysicalNnSoftmaxOp {
     }
 }
 
+const SQRT_2_OVER_PI: f64 = 0.7978845608;
+
+#[derive(Debug, Clone)]
+pub struct PhysicalNnGeluOp {}
+impl PhysicalOp for PhysicalNnGeluOp {
+    fn physical_forward(&self, inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        // Approximate GeLU
+        // https://paperswithcode.com/method/gelu
+
+        let input = inputs[0];
+        for i in 0..input.num_elements() {
+            let x = input.get_element(i).as_f64();
+            let value = PhysicalValue::from_f64(
+                0.5 * x * (1.0 + (SQRT_2_OVER_PI * (x + 0.044715 * x.powi(3)).tanh())),
+            );
+            output.set_element(i, value);
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct PhysicalNnAttentionOp {}
 impl PhysicalOp for PhysicalNnAttentionOp {
@@ -640,6 +660,7 @@ pub enum PhysicalOpType {
     Sqrt(PhysicalSqrtOp),
     MatMul(PhysicalMatMulOp),
     Slice(PhysicalSliceOp),
+    NnGelu(PhysicalNnGeluOp),
     NnSoftmax(PhysicalNnSoftmaxOp),
     NnAttention(PhysicalNnAttentionOp),
     NnDense(PhysicalNnDenseOp),
@@ -669,6 +690,7 @@ impl PhysicalOpType {
             PhysicalOpType::MatMul(op) => Box::new(op.clone()),
             PhysicalOpType::Slice(op) => Box::new(op.clone()),
             PhysicalOpType::NnSoftmax(op) => Box::new(op.clone()),
+            PhysicalOpType::NnGelu(op) => Box::new(op.clone()),
             PhysicalOpType::NnAttention(op) => Box::new(op.clone()),
             PhysicalOpType::NnDense(op) => Box::new(op.clone()),
             PhysicalOpType::NnRmsNorm(op) => Box::new(op.clone()),
@@ -704,6 +726,7 @@ fn logical_call_to_physical_op(logical_call: &LogicalGraphCall) -> PhysicalOpTyp
         OpCode::BasicMatMul(_) => PhysicalOpType::MatMul(PhysicalMatMulOp {}),
         OpCode::BasicSlice(_) => PhysicalOpType::Slice(PhysicalSliceOp {}),
         OpCode::NnSoftmax(_) => PhysicalOpType::NnSoftmax(PhysicalNnSoftmaxOp {}),
+        OpCode::NnGelu(_) => PhysicalOpType::NnGelu(PhysicalNnGeluOp {}),
         OpCode::NnAttention(_) => PhysicalOpType::NnAttention(PhysicalNnAttentionOp {}),
         OpCode::NnDense(_) => PhysicalOpType::NnDense(PhysicalNnDenseOp {}),
         OpCode::NnRmsNorm(_) => PhysicalOpType::NnRmsNorm(PhysicalNnRmsNormOp {}),

@@ -6,6 +6,8 @@ use crate::ops::nn::attention::plan_multihead_attention;
 use crate::ops::nn::dense::plan_dense_op;
 use crate::ops::nn::norm::plan_rms_norm;
 
+use super::activations::ActivationType;
+
 #[derive(Debug, Clone)]
 pub struct LogicalTransformerBlockOp {
     embed_dim: usize,
@@ -54,6 +56,7 @@ impl LogicalOp for LogicalTransformerBlockOp {
             self.embed_dim,
             self.ff_hidden_dim,
             self.ff_output_dim,
+            ActivationType::Gelu,
         );
         dense_ffw_op
     }

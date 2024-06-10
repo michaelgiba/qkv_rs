@@ -8,7 +8,7 @@ use crate::ops::basic::math::{
 use crate::ops::basic::slice::{
     LogicalConcatOp, LogicalGetIndexOp, LogicalSliceOp, LogicalTransposeOp,
 };
-use crate::ops::nn::activations::LogicalSoftmaxOp;
+use crate::ops::nn::activations::{LogicalGeluOp, LogicalSoftmaxOp};
 use crate::ops::nn::attention::LogicalAttentionHeadOp;
 use crate::ops::nn::dense::LogicalDenseOp;
 use crate::ops::nn::norm::LogicalRmsNormOp;
@@ -42,6 +42,8 @@ pub enum OpCode {
     // -- Neural Network --
     // Activation
     NnSoftmax(LogicalSoftmaxOp),
+    NnGelu(LogicalGeluOp),
+
     // Attention
     NnAttention(LogicalAttentionHeadOp),
     // Dense
@@ -75,6 +77,7 @@ impl OpCode {
             OpCode::BasicMatMul(op) => Box::new(op.clone()),
             OpCode::BasicSlice(op) => Box::new(op.clone()),
             OpCode::NnSoftmax(op) => Box::new(op.clone()),
+            OpCode::NnGelu(op) => Box::new(op.clone()),
             OpCode::NnAttention(op) => Box::new(op.clone()),
             OpCode::NnDense(op) => Box::new(op.clone()),
             OpCode::NnRmsNorm(op) => Box::new(op.clone()),
@@ -104,6 +107,7 @@ impl OpCode {
             OpCode::BasicSlice(_) => "BasicSlice",
             OpCode::NnSoftmax(_) => "NnSoftmax",
             OpCode::NnAttention(_) => "NnAttention",
+            OpCode::NnGelu(_) => "NnGelu",
             OpCode::NnDense(_) => "NnDense",
             OpCode::NnRmsNorm(_) => "NnRmsNorm",
             OpCode::NnRope(_) => "NnRope",

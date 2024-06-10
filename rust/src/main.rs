@@ -47,7 +47,8 @@ fn fill_parameters(logical_graph: &mut LogicalGraph, physical_graph: &mut Physic
     let w_mha_0pos1 = logical_graph.get_tensor_by_name("NnAttention_1_positions");
     let w_mha_out = logical_graph.get_tensor_by_name("NnMha_0_out_weights");
 
-    let ff_w1 = logical_graph.get_tensor_by_name("NnDense_0_ff_w1");
+    let ff_w1_gate = logical_graph.get_tensor_by_name("NnDense_0_ff_w1_gate");
+    let ff_w1_linear = logical_graph.get_tensor_by_name("NnDense_0_ff_w1_linear");
     let ff_w2 = logical_graph.get_tensor_by_name("NnDense_0_ff_w2");
 
     physical_graph.set_value_for_tensor(&w_mha_0q0, vec![7.0; w_mha_0q0.num_elements()]);
@@ -62,7 +63,8 @@ fn fill_parameters(logical_graph: &mut LogicalGraph, physical_graph: &mut Physic
 
     physical_graph.set_value_for_tensor(&w_mha_out, vec![1.0; w_mha_out.num_elements()]);
 
-    physical_graph.set_value_for_tensor(&ff_w1, vec![1.0; ff_w1.num_elements()]);
+    physical_graph.set_value_for_tensor(&ff_w1_gate, vec![1.0; ff_w1_gate.num_elements()]);
+    physical_graph.set_value_for_tensor(&ff_w1_linear, vec![1.0; ff_w1_linear.num_elements()]);
     physical_graph.set_value_for_tensor(&ff_w2, vec![1.0; ff_w2.num_elements()]);
 }
 
