@@ -8,13 +8,14 @@ set -euo pipefail
 (cd ${PROJECT_ROOT}/rust && cargo build)
 
 
+# Gemma-like defaults
 RUST_BACKTRACE=1 ./rust/target/debug/qkv_rs \
     --batch-size 1 \
-    --input-sequence-length 8 \
+    --input-sequence-length 10 \
     --input-sequence-embed-dim 4 \
-    --mha-head-dim 2 \
-    --mha-num-heads 2 \
-    --ff-hidden-dim 8 \
+    --mha-head-dim 256 \
+    --mha-num-heads 16 \
+    --ff-hidden-dim 3072 \
     --ff-output-dim 4
 
 # echo "Running Python tests..."
