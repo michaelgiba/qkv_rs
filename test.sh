@@ -11,12 +11,12 @@ set -euo pipefail
 # Gemma-like defaults
 RUST_BACKTRACE=1 ./rust/target/debug/qkv_rs \
     --batch-size 1 \
-    --input-sequence-length 10 \
+    --input-sequence-length 1 \
     --input-sequence-embed-dim 4 \
-    --mha-head-dim 256 \
+    --mha-head-dim 2 \
     --mha-num-heads 16 \
-    --ff-hidden-dim 3072 \
-    --ff-output-dim 4
+    --ff-hidden-dim 32 \
+    --ff-output-dim 4 --json
 
 # echo "Running Python tests..."
 # (cd ${PROJECT_ROOT}/python && pytest -s)    

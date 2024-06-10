@@ -1,8 +1,11 @@
+use std::collections::HashMap;
+
 use clap::Parser;
 use qkv_rs::logical::{LogicalGraph, LogicalValueType};
 use qkv_rs::ops::basic::inputs::plan_input_placeholder;
 use qkv_rs::ops::nn::transformer::plan_transformer_block;
 use qkv_rs::physical::PhysicalGraph;
+use serde::{Deserialize, Serialize};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -34,38 +37,42 @@ struct Args {
     // Size of feed forward output dimension, required
     #[arg(long)]
     ff_output_dim: usize,
+
+    // Bool if the binary should output in json mode
+    #[arg(long)]
+    json: bool,
+
+    // JSON file containing weights
+    #[arg(long)]
+    weights: Option<String>,
 }
 
-fn fill_parameters(logical_graph: &mut LogicalGraph, physical_graph: &mut PhysicalGraph) {
-    let w_mha_0q0 = logical_graph.get_tensor_by_name("NnAttention_0_q_weights");
-    let w_mha_0k0 = logical_graph.get_tensor_by_name("NnAttention_0_k_weights");
-    let w_mha_0v0 = logical_graph.get_tensor_by_name("NnAttention_0_v_weights");
-    let w_mha_0pos0 = logical_graph.get_tensor_by_name("NnAttention_0_positions");
-    let w_mha_0q1 = logical_graph.get_tensor_by_name("NnAttention_1_q_weights");
-    let w_mha_0k1 = logical_graph.get_tensor_by_name("NnAttention_1_k_weights");
-    let w_mha_0v1 = logical_graph.get_tensor_by_name("NnAttention_1_v_weights");
-    let w_mha_0pos1 = logical_graph.get_tensor_by_name("NnAttention_1_positions");
-    let w_mha_out = logical_graph.get_tensor_by_name("NnMha_0_out_weights");
+#[derive(Deserialize, Serialize, Debug)]
+struct WeightsContent {
+    tensors: HashMap<String, Vec<f64>>,
+}
 
-    let ff_w1_gate = logical_graph.get_tensor_by_name("NnDense_0_ff_w1_gate");
-    let ff_w1_linear = logical_graph.get_tensor_by_name("NnDense_0_ff_w1_linear");
-    let ff_w2 = logical_graph.get_tensor_by_name("NnDense_0_ff_w2");
+fn fill_parameters(
+    logical_graph: &mut LogicalGraph,
+    physical_graph: &mut PhysicalGraph,
+    weights: WeightsContent,
+) {
+    for (name, value) in weights.tensors.iter() {
+        let tensor = logical_graph.get_tensor_by_name(name);
+        physical_graph.set_value_for_tensor(&tensor, value.clone());
+    }
+}
 
-    physical_graph.set_value_for_tensor(&w_mha_0q0, vec![7.0; w_mha_0q0.num_elements()]);
-    physical_graph.set_value_for_tensor(&w_mha_0k0, vec![11.0; w_mha_0k0.num_elements()]);
-    physical_graph.set_value_for_tensor(&w_mha_0v0, vec![13.0; w_mha_0v0.num_elements()]);
-    physical_graph.set_value_for_tensor(&w_mha_0pos0, vec![17.0; w_mha_0pos0.num_elements()]);
-
-    physical_graph.set_value_for_tensor(&w_mha_0q1, vec![3.0; w_mha_0q1.num_elements()]);
-    physical_graph.set_value_for_tensor(&w_mha_0k1, vec![5.0; w_mha_0k1.num_elements()]);
-    physical_graph.set_value_for_tensor(&w_mha_0v1, vec![19.0; w_mha_0v1.num_elements()]);
-    physical_graph.set_value_for_tensor(&w_mha_0pos1, vec![23.0; w_mha_0pos1.num_elements()]);
-
-    physical_graph.set_value_for_tensor(&w_mha_out, vec![1.0; w_mha_out.num_elements()]);
-
-    physical_graph.set_value_for_tensor(&ff_w1_gate, vec![1.0; ff_w1_gate.num_elements()]);
-    physical_graph.set_value_for_tensor(&ff_w1_linear, vec![1.0; ff_w1_linear.num_elements()]);
-    physical_graph.set_value_for_tensor(&ff_w2, vec![1.0; ff_w2.num_elements()]);
+fn load_weights_from_file(file_name: Option<String>) -> WeightsContent {
+    match file_name {
+        Some(file_name) => {
+            let file = std::fs::File::open(file_name).unwrap();
+            serde_json::from_reader(file).unwrap()
+        }
+        None => WeightsContent {
+            tensors: HashMap::new(),
+        },
+    }
 }
 
 fn main() {
@@ -92,7 +99,9 @@ fn main() {
 
     let mut physical_graph = PhysicalGraph::compile(&graph, &[&transformer_output]);
 
-    fill_parameters(&mut graph, &mut physical_graph);
+    // Load weights from file and deserialize into WeightsContent
+    let weights_content: WeightsContent = load_weights_from_file(args.weights);
+    fill_parameters(&mut graph, &mut physical_graph, weights_content);
 
     // Provide input values
     physical_graph.set_value_for_tensor(
@@ -102,5 +111,7 @@ fn main() {
 
     let outputs = physical_graph.compute(&transformer_output);
 
-    println!("{:?}", outputs);
+    if args.json {
+        println!("{}", serde_json::to_string(&outputs).unwrap());
+    }
 }

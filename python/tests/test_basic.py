@@ -3,6 +3,8 @@ import numpy as np
 import pytest
 import os
 from functools import cache
+import json
+import tempfile
 
 
 @cache
@@ -53,24 +55,65 @@ def rust_binary_runner():
     return run_rust_binary
 
 
-def test_transformer_block_output(rust_binary_runner):
+def test_basic_transformer_outputs(rust_binary_runner):
     """Tests the transformer block's output for specific input."""
-    output_str = rust_binary_runner(
-        [
-            "--batch-size",
-            "1",
-            "--input-sequence-length",
-            "8",
-            "--input-sequence-embed-dim",
-            "4",
-            "--mha-head-dim",
-            "2",
-            "--mha-num-heads",
-            "2",
-            "--ff-hidden-dim",
-            "8",
-            "--ff-output-dim",
-            "4",
-        ]
-    )
-    assert len(output_str)  # Placeholder for actual assertions
+
+    weights = {
+        "tensors": {
+            "NnAttention_0_q_weights": [3.0] * 8,
+            "NnAttention_0_k_weights": [5.0] * 8,
+            "NnAttention_0_v_weights": [7.0] * 8,
+            "NnAttention_0_positions": [11.0] * 16,
+            "NnAttention_1_q_weights": [13.0] * 8,
+            "NnAttention_1_k_weights": [17.0] * 8,
+            "NnAttention_1_v_weights": [19.0] * 8,
+            "NnAttention_1_positions": [23.0] * 16,
+            "NnMha_0_out_weights": [29.0] * 16,
+            "NnDense_0_ff_w1_gate": [31.0] * 32,
+            "NnDense_0_ff_w1_linear": [37.0] * 32,
+            "NnDense_0_ff_w2": [43.0] * 32,
+        }
+    }
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = os.path.join(tmpdir, "weights.json")
+        with open(path, "w") as f:
+            json.dump(weights, f)
+
+        output_str = rust_binary_runner(
+            [
+                "--batch-size",
+                "1",
+                "--input-sequence-length",
+                "8",
+                "--input-sequence-embed-dim",
+                "4",
+                "--mha-head-dim",
+                "2",
+                "--mha-num-heads",
+                "2",
+                "--ff-hidden-dim",
+                "8",
+                "--ff-output-dim",
+                "4",
+                "--weights",
+                path,
+                "--json",
+            ]
+        )
+
+        print(output_str)
+
+    try:
+        output = json.loads(output_str)
+    except json.JSONDecodeError:
+        assert False, f"Failed to parse JSON: {output_str}"
+
+    assert "spec" in output
+    assert "values" in output
+
+    spec = output["spec"]
+    values = np.array(output["values"])
+
+    assert list(spec["shape"]) == [8, 4]
+    assert len(values) == 32

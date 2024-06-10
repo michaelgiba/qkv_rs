@@ -1,7 +1,8 @@
 use crate::opcode::OpCode;
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Debug};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Clone, Serialize, Debug, Deserialize, Copy, PartialEq)]
 pub enum LogicalValueType {
     F64,
     U32,
@@ -65,7 +66,7 @@ pub fn f64_value_to_bytes(value: f64) -> Vec<u8> {
     value.to_le_bytes().to_vec()
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Serialize, Debug, Deserialize)]
 pub struct LogicalTensor {
     pub id: usize,
     pub shape: Vec<usize>,

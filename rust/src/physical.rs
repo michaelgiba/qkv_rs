@@ -1,3 +1,5 @@
+use serde::{ser::SerializeStruct, Deserialize, Serialize};
+
 use crate::{
     logical::{LogicalGraph, LogicalGraphCall, LogicalTensor, LogicalValueType},
     opcode::OpCode,
@@ -89,7 +91,7 @@ impl PhysicalValue {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize)]
 pub struct PhysicalTensor {
     spec: LogicalTensor,
     values: Vec<u8>,
@@ -107,6 +109,24 @@ impl Debug for PhysicalTensor {
             .field("spec", &self.spec)
             .field("values", &values_in_logical_type)
             .finish()
+    }
+}
+
+impl Serialize for PhysicalTensor {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        let values_in_logical_type = self
+            .values
+            .chunks_exact(self.spec.value_type.size())
+            .map(|x| self.spec.value_type.as_f64(x))
+            .collect::<Vec<f64>>();
+
+        let mut state = serializer.serialize_struct("PhysicalTensor", 2)?;
+        state.serialize_field("spec", &self.spec)?;
+        state.serialize_field("values", &values_in_logical_type)?;
+        state.end()
     }
 }
 
@@ -342,8 +362,8 @@ impl PhysicalOp for PhysicalLiteralU32Op {
 
 pub struct PhysicalBroadcastOp {}
 impl PhysicalOp for PhysicalBroadcastOp {
-    fn physical_forward(&self, _inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        let x = _inputs[0].get_scalar_value();
+    fn physical_forward(&self, inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
+        let x = inputs[0].get_scalar_value();
         for i in 0..output.num_elements() {
             output.set_element(i, x.clone());
         }
@@ -621,11 +641,13 @@ impl PhysicalOp for PhysicalNnRmsNormOp {
     }
 }
 
+const _ROPE_MAX_WAVELENGTH: f64 = 10_000.0;
+
 #[derive(Debug, Clone)]
 pub struct PhysicalNnRopeOp {}
 impl PhysicalOp for PhysicalNnRopeOp {
     fn physical_forward(&self, inputs: &[&PhysicalTensor], output: &mut PhysicalTensor) {
-        println!("Warning! Rope is NOT IMPLEMENETED YET.");
+        eprintln!("Warning! Rope is NOT IMPLEMENETED YET.");
         let input = inputs[0];
         for i in 0..input.num_elements() {
             output.set_element(i, input.get_element(i));
